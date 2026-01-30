@@ -1,7 +1,7 @@
 # SAURIA_CORE
 RTL code of SAURIA Core and testbench to test each module
 
-## 1. Adder
+## 1. ADDER
 ###   a. Adder Gear (Generic Error-tolerant Adder):
       -Divide into many Sub-Adder then add them together to create the Result.
       -Low blocks: no carry propagation.
@@ -20,7 +20,8 @@ RTL code of SAURIA Core and testbench to test each module
       -Carry from low bits is estimated, guess the carry.
 ###   g. Adder Generic:
       -Control different adders by using ADD_TYPE to compare the result of different adders.
-## 2. Multiplier
+      
+## 2. MULTIPLIER
 ###   a. Bam_cell (Bit-level AND Multiplier):
       -And bit then sum with the previous result and carry.
 ###   b. Multiplier Bam_cell:
@@ -45,5 +46,7 @@ RTL code of SAURIA Core and testbench to test each module
       -A 16-bit extendsion of Wallace 8-bit
 ###   g. Multiplier Wallace
       -A general Wallace tree multiplier.
+      
 ## 3. PE
-## 4. Systolic Array
+
+## 4. SYSTOLIC ARRAY
