@@ -6,10 +6,12 @@ module Multiplier_log #(
 	parameter WIDTH_A 	= 16,
 	parameter WIDTH_B 	= 16,
 	parameter WIDTH_MUL = 32,
-	parameter SIGNED	= 0
+	parameter SIGNED	= 0,
+	parameter STAGE		= 0
 )(
-	input	wire			clk,
-	input	wire			rst_n,
+	input	wire					clk,
+	input	wire					rst_n,
+	input	wire					pip_en,
 	input	wire	[WIDTH_A-1:0]	A,
 	input	wire	[WIDTH_B-1:0]	B,
 
@@ -53,7 +55,10 @@ module Multiplier_log #(
 	wire 			[X_W-1:0]     					xprod;
 	wire 			[LOG_W-X_W:0] 					kprod;
 	wire 			[WIDTH_A-1:0] 					abs_a;
-	wire 			[WIDTH_B-1:0] 					abs_b
+	wire 			[WIDTH_B-1:0] 					abs_b;
+	reg 	signed 	[WIDTH_MUL-1:0] 				pipe_reg [0:STAGE];
+	integer 										p;
+	wire 	signed 	[WIDTH_MUL-1:0] 				product_sign;
 
 	
 	assign	a_sign 		= 	(~SIGNED) 		?	A :
@@ -66,8 +71,8 @@ module Multiplier_log #(
 	
 	assign 	pro_sign 	= 	SIGNED & (A[WIDTH_A-1] ^ B[WIDTH_B-1]);
 
-	assign  abs_a 		= 	(SIGNED && A[WIDTH_A-1]) ? -A : A;
-	assign  abs_b		= 	(SIGNED && B[WIDTH_B-1]) ? -B : B;
+	assign  abs_a 		= 	(SIGNED && A[WIDTH_A-1]) ? (0-A) : A;
+	assign  abs_b		= 	(SIGNED && B[WIDTH_B-1]) ? (0-B) : B;
 
 	lopd #(
 		.WIDTH_I(WIDTH_A),
@@ -124,6 +129,22 @@ module Multiplier_log #(
 		end
 	end
 
-	assign OUT = (SIGNED && (A[WIDTH_A-1] ^ B[WIDTH_B-1])) ? -product : product;
+	assign product_sign 	= (SIGNED && (A[WIDTH_A-1] ^ B[WIDTH_B-1])) ? -product : product;
+
+	always @(posedge clk or negedge rst_n) begin
+		if (!rst_n) begin
+       		for(p = 0; p <= STAGE; p = p + 1) begin
+				pipe_reg[p]		<= {WIDTH_MUL{1'b0}};
+			end
+		end
+		else if (pip_en) begin
+    		pipe_reg[0] <= product_sign;
+    		for (p = 1; p <= STAGE; p = p + 1) begin
+        		pipe_reg[p] <= pipe_reg[p-1];
+			end
+		end
+	end
+
+	assign OUT = pipe_reg[STAGE];
 endmodule
 
