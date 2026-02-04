@@ -4,11 +4,12 @@ module Multiplier_wallace #(
 	parameter WIDTH_A 	= 16,
 	parameter WIDTH_B 	= 16,
 	parameter WIDTH_MUL = 32,
-	parameter SIGNED	= 0
+	parameter SIGNED	= 0, 
+	parameter STAGE		= 0
 )(
     input	wire 					clk,
 	input	wire					rst_n,
-
+	input	wire					pip_en,
 	input	wire	[WIDTH_A-1:0]	A,
 	input	wire	[WIDTH_B-1:0]	B,
 
@@ -22,6 +23,8 @@ module Multiplier_wallace #(
 	wire			[31:0]			product;
 	reg				[WIDTH_MUL-1:0]	product_out;
 	wire							a_sign, b_sign, pro_sign;
+	reg 	signed 	[WIDTH_MUL-1:0] pipe_reg [0:STAGE];
+	integer 						p;
 
 	assign	a_sign		= A[WIDTH_A-1];		//1st bit of A
 	assign	b_sign		= B[WIDTH_B-1];		//1st bit of B
@@ -58,6 +61,20 @@ module Multiplier_wallace #(
 		end
 	end
  
-	assign 	OUT = product_out;
+	always @(posedge clk or negedge rst_n) begin
+		if (!rst_n) begin
+       		for(p = 0; p <= STAGE; p = p + 1) begin
+				pipe_reg[p]		<= {WIDTH_MUL{1'b0}};
+			end
+		end
+		else if (pip_en) begin
+    		pipe_reg[0] <= product_out;
+    		for (p = 1; p <= STAGE; p = p + 1) begin
+        		pipe_reg[p] <= pipe_reg[p-1];
+			end
+		end
+	end
+
+	assign OUT = pipe_reg[STAGE];
 
 endmodule
