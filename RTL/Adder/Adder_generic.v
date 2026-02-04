@@ -1,6 +1,6 @@
 module Adder_generic #(
     parameter   WIDTH_A         = 16,
-    parameter   WIDTH_A         = 16,
+    parameter   WIDTH_B         = 16,
     parameter   WIDTH_OUT       = 16,
     parameter   AA_APPROX       = 1,
     parameter   A_APPROX        = 1,
