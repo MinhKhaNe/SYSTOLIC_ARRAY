@@ -4,7 +4,8 @@ module processing_element_is #(
     parameter   WIDTH_MAC           = 48,
     parameter   WIDTH_T             = 2,
     parameter   ZERO_GATING_MULT    = 1,
-    parameter   ZERO_GATING_ADD     = 1
+    parameter   ZERO_GATING_ADD     = 1,
+    parameter   STAGE               = 0
 )(
     input   wire                    clk,
     input   wire                    rst_n,
@@ -23,6 +24,8 @@ module processing_element_is #(
 
     output  wire                    cell_out,
 
+    output  wire    [WIDTH_A-1:0]   acc_out,
+    output  wire    [WIDTH_B-1:0]   weight_out,
     output  wire    [WIDTH_MAC-1:0] MAC_OUT             //MAC
 );
 
@@ -55,7 +58,7 @@ module processing_element_is #(
         .ADD_TYPE(ADD_TYPE),
         .A_APPROX(A_APPROX),
         .AA_APPROX(AA_APPROX),
-        .STAGES(STAGES_MUL),
+        .STAGES(STAGE),
         .INTERMEDIATE_PIPELINE_STAGE(INTERMEDIATE_PIPELINE_STAGE),
         .ZERO_GATING_MULT(ZERO_GATING_MULT),
         .FP_W(WIDTH_A)
