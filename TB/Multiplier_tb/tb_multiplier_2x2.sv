@@ -1,4 +1,4 @@
-module tb_Multiplier_2x2;
+module tb_multiplier_2x2;
 
     logic [1:0] A, B;
     logic [3:0] OUT_exact;
@@ -19,8 +19,8 @@ module tb_Multiplier_2x2;
     );
 
     initial begin
-        $dumpfile("tb_Multiplier_2x2.vcd");
-        $dumpvars(0, tb_Multiplier_2x2);
+        $dumpfile("tb_multiplier_2x2.vcd");
+        $dumpvars(0, tb_multiplier_2x2);
 
         $display(" A  B | GOLD | EXACT | APPROX");
 
@@ -47,3 +47,4 @@ module tb_Multiplier_2x2;
     end
 
 endmodule
+
