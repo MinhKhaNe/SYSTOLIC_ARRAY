@@ -1,6 +1,6 @@
 module Multiplier_generic #(
     parameter   WIDTH_A     = 16,
-    parameter   WIDTH_A     = 16,
+    parameter   WIDTH_B     = 16,
     parameter   MM_APPROX   = 1,
     parameter   M_APPROX    = 1,
     parameter   MUL_TYPE    = 0,
