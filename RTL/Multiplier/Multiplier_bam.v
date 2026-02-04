@@ -98,13 +98,9 @@ module Multiplier_bam #(
 					pipe_reg[p]		<= pipe_reg[p-1];
 				end
 			end
-			else begin
-				for(p = 0; p <= STAGE; p = p + 1) begin
-        			pipe_reg[p] 	<= pipe_reg[p];
-				end
-			end
 	end
 
 	assign OUT 	= pipe_reg[STAGE];
 
 endmodule
+
