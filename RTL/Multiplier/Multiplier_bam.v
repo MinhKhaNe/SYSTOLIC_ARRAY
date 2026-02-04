@@ -3,27 +3,34 @@
 module Multiplier_bam #(
 	parameter WIDTH_A 	= 16,
 	parameter WIDTH_B 	= 16,
-	parameter WIDTH_OUT	= 32,
+	parameter WIDTH_OUT	= WIDTH_A + WIDTH_B,
 	parameter SIGNED 	= 0,
 	parameter VBL		= 0,		//Cut bit along Vertical(x) axis
-	parameter HBL		= 0		//Cut bit along Horizontal(y) axis
-	  	
+	parameter HBL		= 0,		//Cut bit along Horizontal(y) axis
+	parameter STAGE		= 0	  	
 )(
 	input	wire			clk,
 	input	wire			rst_n,
+	input	wire			pip_en,
 	input	wire	[WIDTH_A-1:0]	A,
 	input	wire	[WIDTH_B-1:0]	B,
 
-	output	reg	[WIDTH_OUT-1:0]	OUT
+	output	wire	[WIDTH_OUT-1:0]	OUT
 );
 	
 	parameter	WIDTH = `max(WIDTH_A, WIDTH_B);
 	
 	wire	signed	[WIDTH:0]		a, b;
-	wire	[WIDTH:0][WIDTH*2:0]		OUT_arr, sum_arr, carry_arr;
-	wire					a_sign, b_sign, pro_sign;
-	wire	[WIDTH_OUT:0]			product;
+	wire	[WIDTH*2:0]				sum_arr[WIDTH:0];
+	wire	[WIDTH*2:0]				carry_arr[WIDTH:0];
+	wire							a_sign, b_sign, pro_sign;
+	wire	[2*WIDTH-1:0]			product;
 	wire 	[2*WIDTH-1:0] 			final_sum, final_carry;
+	reg 	signed [WIDTH_OUT-1:0] 	pipe_reg [0:STAGE];
+	integer 						p;
+	wire 	signed [2*WIDTH-1:0] 	product_signed;
+
+	assign product_signed 	= (SIGNED && pro_sign) ? -$signed(product) : product;
 	
 	assign	a_sign		= A[WIDTH_A-1];	//check signed bit
 	assign	b_sign		= B[WIDTH_B-1];	
@@ -35,8 +42,8 @@ module Multiplier_bam #(
 
 	genvar x, y;
 	generate
-		for(x = 0; x < WIDTH; x = x + 1) begin :
-			for(y = 0; y < WIDTH; y = y + 1) begin :
+		for(x = 0; x < WIDTH; x = x + 1) begin
+			for(y = 0; y < WIDTH; y = y + 1) begin
 				//Intermediate signal for each cell
 				wire current_a = a[x];
 				wire current_b = b[y];
@@ -80,12 +87,24 @@ module Multiplier_bam #(
 	assign product = final_sum + final_carry;
 
 	always @(posedge clk or negedge rst_n) begin
-    		if (!rst_n)
-       			OUT <= '0;
-    		else if (SIGNED && pro_sign)
-        		OUT <= -$signed(product);
-    		else
-       			OUT <= product;
+    		if (!rst_n) begin
+       			for(p = 0; p <= STAGE; p = p + 1) begin
+					pipe_reg[p]		<= {WIDTH_OUT{1'b0}};
+				end
+			end
+			else if(pip_en) begin
+    			pipe_reg[0]	<= product_signed;
+        		for(p = 1; p <= STAGE; p = p + 1) begin
+					pipe_reg[p]		<= pipe_reg[p-1];
+				end
+			end
+			else begin
+				for(p = 0; p <= STAGE; p = p + 1) begin
+        			pipe_reg[p] 	<= pipe_reg[p];
+				end
+			end
 	end
+
+	assign OUT 	= pipe_reg[STAGE];
 
 endmodule
