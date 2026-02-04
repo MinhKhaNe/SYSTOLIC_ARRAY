@@ -15,6 +15,6 @@ module Bam_cell(
 	assign	result		= and_ab + pre_OUT + Carry;	
 
 	assign	Carry_out	= result[1];
-	assign	OUT		= result[0];
+	assign	OUT			= result[0];
 	
 endmodule
