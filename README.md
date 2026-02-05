@@ -49,7 +49,6 @@ RTL code of SAURIA Core and testbench to test each module
       
 ## 3. PE
 ### Output-Stationary Processing Element Block Diagram (PE_OS)
-![Output-Stationary PE](image/PE_OS.png)
-
+<img src="image/PE_OS.png" width="70%">
 
 ## 4. SYSTOLIC ARRAY
