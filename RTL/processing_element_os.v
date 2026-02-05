@@ -50,23 +50,26 @@ module processing_element_os #(                         //Output Sationary (Stor
     wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value;           
     wire    [WIDTH_A-1:0]           act_zd;
     wire    [WIDTH_B-1:0]           wei_zd;
+    reg     [WIDTH_A-1:0]           act_reg;
+    reg     [WIDTH_B-1:0]           wei_reg;
     reg                             cell_reg;
     wire                            pipeline_in;
     wire                            Zero_detected;
     wire    [MUL_W-1:0]             mul_value;
     wire                            mul_mux_sel;
-//  reg                             zero_reg;
+    wire                            zero_reg;
 
     assign  mul_mux_sel     = 1'b0;                           //OUTPUT STATIONARY
     assign  mac_value       = mac_reg;
     assign  pipeline_in     = pipeline_en & cell_en;
     assign  c_switch_out    = 1'b0;                        //OS so do not need to switch MAC
-    assign  wei_out         = wei;
-    assign  act_out         = act;
-    assign  MAC_out         = mac_end ? mac_reg : {WIDTH_MAC{1'b0}};
-    assign  act_zd          = Zero_detected ? {WIDTH_A{1'b0}} : act;
-    assign  wei_zd          = Zero_detected ? {WIDTH_B{1'b0}} : wei;
+    assign  wei_out         = wei_reg;
+    assign  act_out         = act_reg;
+    assign  MAC_out         = mac_end   ? mac_reg : {WIDTH_MAC{1'b0}};
+    assign  act_zd          = zero_reg  ? {WIDTH_A{1'b0}} : act;
+    assign  wei_zd          = zero_reg  ? {WIDTH_B{1'b0}} : wei;
     assign  mac_is_valid    = mac_end;
+    assign  zero_reg        = ZERO_DETECTION ? Zero_detected : 1'b0;
 
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
@@ -168,15 +171,21 @@ module processing_element_os #(                         //Output Sationary (Stor
         end
     end
 
-    // always @(posedge clk or negedge rst_n) begin
-    //     if(!rst_n) begin
-    //         zero_reg     <= 1'b0;
-    //     end
-    //     else begin
-    //         if(reg_clear)
-    //             zero_reg    <= 1'b0;
-    //         else if(ZERO_DETECTION) 
-    //             zero_reg    <= Zero_detected;
-    //     end
-    // end
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            act_reg       <= {WIDTH_A{1'b0}};
+            wei_reg       <= {WIDTH_B{1'b0}};
+        end
+        else begin
+            if(reg_clear) begin
+                act_reg       <= {WIDTH_A{1'b0}};
+                wei_reg       <= {WIDTH_B{1'b0}};
+            end
+            else if(pipeline_in) begin
+                act_reg       <= act;
+                wei_reg       <= wei;
+            end
+        end
+    end
+
 endmodule
