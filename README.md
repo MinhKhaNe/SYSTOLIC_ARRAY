@@ -48,7 +48,7 @@ RTL code of SAURIA Core and testbench to test each module
       -A general Wallace tree multiplier.
       
 ## 3. PE
-### Output-Stationary Processing Element Block Diagram (PE_OS)
+###   a. Output-Stationary Processing Element Block Diagram (PE_OS)
 <p align="center">
   <a href="image/PE_OS.png">
     <img src="image/PE_OS.png" width="50%">
