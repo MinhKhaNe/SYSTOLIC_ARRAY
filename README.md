@@ -54,5 +54,7 @@ RTL code of SAURIA Core and testbench to test each module
     <img src="image/PE_OS.png" width="50%">
   </a>
 </p>
+      -Multicast filter weights and reuse activations spatically
+      -From global buffer transmit activation then activation will be transmitted from left to right, weight will be transmitt from top
 
 ## 4. SYSTOLIC ARRAY
