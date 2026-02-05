@@ -54,10 +54,10 @@ RTL code of SAURIA Core and testbench to test each module
     <img src="image/PE_OS.png" width="50%">
   </a>
 </p>
-      -An Output-Stationary Processing Element designed for MAC operations.
-      -Each PE contains a local accumulator to store partial sums.
-      -The partial sum (output) remains stationary inside the PE during computation.
-      -Input activation and weight are multiplied and accumulated locally.
-      -The final output is written out only after the accumulation is complete.
+      - An Output-Stationary Processing Element designed for MAC operations.
+      - Each PE contains a local accumulator to store partial sums.
+      - The partial sum (output) remains stationary inside the PE during computation.
+      - Input activation and weight are multiplied and accumulated locally.
+      - The final output is written out only after the accumulation is complete.
 
 ## 4. SYSTOLIC ARRAY
