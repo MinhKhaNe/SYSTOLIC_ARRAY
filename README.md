@@ -48,6 +48,8 @@ RTL code of SAURIA Core and testbench to test each module
       -A general Wallace tree multiplier.
       
 ## 3. PE
-![Output Stationary PE](images/PE_OS.png)
+# Output-Stationary Processing Element (PE)
+![Output-Stationary PE](image/PE_OS.png)
+
 
 ## 4. SYSTOLIC ARRAY
