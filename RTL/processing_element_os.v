@@ -46,7 +46,7 @@ module processing_element_os #(                         //Output Sationary (Stor
 
     reg     [WIDTH_MAC-1:0]         mac_reg;            //Always choosing local mac instead of Out MAC because of OS
     wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;       
-    // reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
+    reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
     wire    [WIDTH_A-1:0]           act_zd;
     wire    [WIDTH_B-1:0]           wei_zd;
     reg     [WIDTH_A-1:0]           act_reg;
@@ -63,7 +63,7 @@ module processing_element_os #(                         //Output Sationary (Stor
     integer                         i;
 
     assign  mul_mux_sel     = 1'b0;                             //OUTPUT STATIONARY
-    assign  mac_value       = mac_reg;
+    assign  mac_value       = pipe_mac;
     assign  pipeline_in     = pipeline_en & cell_en;
     assign  c_switch_out    = 1'b0;                             //OS so do not need to switch MAC
     assign  wei_out         = wei_reg;
@@ -213,18 +213,18 @@ module processing_element_os #(                         //Output Sationary (Stor
         end
     end
 
-    // always @(posedge clk or negedge rst_n) begin
-    //     if(!rst_n) begin
-    //         for(i = 0; i < STAGE; i = i + 1) begin
-    //             pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
-    //         end
-    //     end
-    //     else if(pipeline_in) begin
-    //         pipe_mac[0] <= mac_reg;
-    //         for(i = 1; i < STAGE + 1; i = i + 1) begin
-    //             pipe_mac[i]    <= pipe_mac[i-1];
-    //         end
-    //     end
-    // end
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            for(i = 0; i < STAGE; i = i + 1) begin
+                pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
+            end
+        end
+        else if(pipeline_in) begin
+            pipe_mac[0] <= mac_reg;
+            for(i = 1; i < STAGE + 1; i = i + 1) begin
+                pipe_mac[i]    <= pipe_mac[i-1];
+            end
+        end
+    end
 
 endmodule
