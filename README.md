@@ -48,7 +48,9 @@ RTL code of SAURIA Core and testbench to test each module
       -A general Wallace tree multiplier.
       
 ## 3. PE
-###   Verification Plan for PE: https://mphcmiuedu-my.sharepoint.com/:x:/g/personal/ititiu22079_student_hcmiu_edu_vn/IQC0wkPXaIB7Tq4I-hlCgAkPAVLJUxNocYbcnPVQndi1700?e=vnJbsw
+###   Verification Plan for PE
+https://mphcmiuedu-my.sharepoint.com/:x:/g/personal/ititiu22079_student_hcmiu_edu_vn/IQC0wkPXaIB7Tq4I-hlCgAkPAVLJUxNocYbcnPVQndi1700?e=vnJbsw
+
 ###   a. Output-Stationary Processing Element Block Diagram (PE_OS)
 <p align="center">
   <a href="image/PE_OS.png">
