@@ -49,7 +49,7 @@ RTL code of SAURIA Core and testbench to test each module
       
 ## 3. PE
 ###   Verification Plan for PE
-https://mphcmiuedu-my.sharepoint.com/:x:/g/personal/ititiu22079_student_hcmiu_edu_vn/IQC0wkPXaIB7Tq4I-hlCgAkPAVLJUxNocYbcnPVQndi1700?e=vnJbsw
+[https://mphcmiuedu-my.sharepoint.com/:x:/g/personal/ititiu22079_student_hcmiu_edu_vn/IQC0wkPXaIB7Tq4I-hlCgAkPAVLJUxNocYbcnPVQndi1700?e=vnJbsw](https://mphcmiuedu-my.sharepoint.com/:x:/g/personal/ititiu22079_student_hcmiu_edu_vn/IQC0wkPXaIB7Tq4I-hlCgAkPAfDabHpD3DtsSQVKKEnfaag?e=iWINSQ)
 
 ###   a. Output-Stationary Processing Element Block Diagram (PE_OS)
 <p align="center">
