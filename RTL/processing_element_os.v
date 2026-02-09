@@ -29,7 +29,7 @@ module processing_element_os #(                         //Output Sationary (Stor
     input   wire                    cell_en,            //
     input   wire                    cell_sc_en,         //
     input   wire                    c_switch,           //Switch value between internal Accumulate and input Accumulate (Off because Output Stationary)
-    input   wire                    cscan_en,           //
+    input   wire                    cscan_en,           //enable push MAC to output
 
     input   wire    [WIDTH_T-1:0]   Thres,              //Threshold for zero detection
 
@@ -46,7 +46,7 @@ module processing_element_os #(                         //Output Sationary (Stor
 
     reg     [WIDTH_MAC-1:0]         mac_reg;            //Always choosing local mac instead of Out MAC because of OS
     wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;       
-    reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
+    // reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
     wire    [WIDTH_A-1:0]           act_zd;
     wire    [WIDTH_B-1:0]           wei_zd;
     reg     [WIDTH_A-1:0]           act_reg;
@@ -56,24 +56,26 @@ module processing_element_os #(                         //Output Sationary (Stor
     wire                            Zero_detected;
     wire    [MUL_W-1:0]             mul_value;
     wire                            mul_mux_sel;
-    wire                            zero_reg, mac_is_valid;
+    wire                            zero, mac_is_valid;
     reg     [STAGE:0]               pipe_valid, zero_pipe;
+    reg                             zero_chk;
     wire                            acc_read_en;
-
+    reg     [WIDTH_MAC-1:0]         mac_buffer;
     integer                         i;
 
     assign  mul_mux_sel     = 1'b0;                             //OUTPUT STATIONARY
-    assign  mac_value       = pipe_mac;
-    assign  pipeline_in     = pipeline_en & cell_en;
+    // assign  mac_value       = pipe_mac[STAGE];                  //Final MAC value after pipeline
+    assign  mac_value       = mac_reg;                  //Final MAC value after pipeline
+    assign  pipeline_in     = pipeline_en & cell_en;            //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                             //OS so do not need to switch MAC
-    assign  wei_out         = wei_reg;
-    assign  act_out         = act_reg;
-    assign  MAC_out         = mac_is_valid      ? mac_reg : MAC_IN;     //If having mac_end signal, push local mac value out, otherwise it will be transfer station
-    assign  act_zd          = zero_reg          ? {WIDTH_A{1'b0}} : act;
-    assign  wei_zd          = zero_reg          ? {WIDTH_B{1'b0}} : wei;
-    assign  mac_is_valid    = pipe_valid[STAGE];
-    assign  zero_reg        = ZERO_DETECTION    ? Zero_detected : 1'b0;
-    assign  acc_read_en     = mac_is_valid && ~zero_pipe[STAGE] && pipeline_in;
+    assign  wei_out         = wei_reg;                          //Push WEIGHT to next PE
+    assign  act_out         = act_reg;                          //Push Activation to next PE
+    assign  act_zd          = zero  ? {WIDTH_A{1'b0}} : act;
+    assign  wei_zd          = zero  ? {WIDTH_B{1'b0}} : wei;
+    assign  mac_is_valid    = pipe_valid[STAGE];                //When finish all stage, mac is valid to push out
+    assign  zero            = ZERO_DETECTION    ? Zero_detected : 1'b0;
+    assign  acc_read_en     = mac_is_valid && ~zero_chk; 
+    assign  zero_chk        = zero_pipe[STAGE];                 //Check whether ACTIVATION or WEIGHT is zero or not
 
 
     Zero_detection #(
@@ -88,7 +90,7 @@ module processing_element_os #(                         //Output Sationary (Stor
     );
 
     generate
-        if (ARITHMETIC) begin
+        if (ARITHMETIC) begin                                   //If ARITHMETIC is 1, choosing value from FMA
             fma_wrapper_ofBSC #(
                 .MUL_TYPE(MUL_TYPE),
                 .M_APPROX(M_APPROX),
@@ -105,13 +107,13 @@ module processing_element_os #(                         //Output Sationary (Stor
                 .i_rstn		        (rst_n && (!reg_clear)),
                 .i_a		        (act_zd),                   //after zero detection
                 .i_b		        (wei_zd),                   //after zero detection
-                .i_c                (mac_value),                 //after zero detection
+                .i_c                (mac_reg),                
                 .i_msel             (mul_mux_sel),
                 .i_pipeline_en      (pipeline_en),
                 .o_c		        (mac_out_fma)
             );
         end 
-        else begin
+        else begin                                              //If ARITHMETIC is 0, choosing value from ADDER and MULTIPLIER
             Adder_generic #(
                 .WIDTH_A(WIDTH_MAC),
                 .WIDTH_B(MUL_W),
@@ -121,7 +123,7 @@ module processing_element_os #(                         //Output Sationary (Stor
                 .ADD_TYPE(ADD_TYPE),
                 .SIGNED(SIGNED)
             ) a0 (
-                .A(mac_value),
+                .A(mac_reg),
                 .B(mul_value),
                 .Carry(0),
                 .OUT(mac_out_adder)
@@ -162,13 +164,31 @@ module processing_element_os #(                         //Output Sationary (Stor
 
     assign cell_out = cell_reg;
 
+    //Push MAC value out
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            mac_buffer        <= {WIDTH_MAC{1'b0}};
+        end
+        else begin
+            if(cscan_en)
+                mac_buffer    <= MAC_IN;
+            else if(mac_is_valid && ~cscan_en)                                       //Transmit value to MAC Buffer after finish pipeline
+                mac_buffer    <= mac_reg;
+        end
+    end
+
+    assign  MAC_out = mac_buffer;
+
     //When finish all STAGE, pipe_valid is HIGH
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             pipe_valid  <= {(STAGE+1){1'b0}};
-        end
-        else if(pipeline_en) begin
-            pipe_valid  <= {pipe_valid[STAGE-1:0], cell_en};    //Shift bit to check
+        end 
+        else begin
+            if(reg_clear)
+                pipe_valid  <= {(STAGE+1){1'b0}};
+            else if(pipeline_in)
+                pipe_valid  <= {pipe_valid[STAGE-1:0], pipeline_in};    //Shift bit to check
         end
     end
 
@@ -177,8 +197,11 @@ module processing_element_os #(                         //Output Sationary (Stor
         if(!rst_n) begin
             zero_pipe  <= {(STAGE+1){1'b0}};
         end
-        else if(pipeline_en) begin
-            zero_pipe  <= {zero_pipe[STAGE-1:0], Zero_detected};    //Shift bit to check
+        else begin
+            if(reg_clear)
+                zero_pipe  <= {(STAGE+1){1'b0}};
+            else if(pipeline_in)
+                zero_pipe  <= {zero_pipe[STAGE-1:0], Zero_detected};        //Shift bit to check
         end
     end
 
@@ -191,7 +214,7 @@ module processing_element_os #(                         //Output Sationary (Stor
                 mac_reg <= {WIDTH_MAC{1'b0}};
             end
             else if (acc_read_en) begin
-                mac_reg <= ARITHMETIC ? mac_out_fma : mac_out_adder;
+                mac_reg <= ARITHMETIC ? mac_out_fma : mac_out_adder;    //Using ARITHMETIC value to check value between fma and (mul with adder)    
             end
         end
     end
@@ -207,24 +230,24 @@ module processing_element_os #(                         //Output Sationary (Stor
                 wei_reg       <= {WIDTH_B{1'b0}};
             end
             else if(pipeline_in) begin
-                act_reg       <= act;
-                wei_reg       <= wei;
+                act_reg       <= act;                                   //Activation Register
+                wei_reg       <= wei;                                   //Weight Register
             end
         end
     end
 
-    always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
-            for(i = 0; i < STAGE; i = i + 1) begin
-                pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
-            end
-        end
-        else if(pipeline_in) begin
-            pipe_mac[0] <= mac_reg;
-            for(i = 1; i < STAGE + 1; i = i + 1) begin
-                pipe_mac[i]    <= pipe_mac[i-1];
-            end
-        end
-    end
+    // always @(posedge clk or negedge rst_n) begin
+    //     if(!rst_n) begin
+    //         for(i = 0; i < STAGE + 1; i = i + 1) begin
+    //             pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
+    //         end
+    //     end
+    //     else if(pipeline_in && !zero_chk) begin
+    //         pipe_mac[0] <= mac_reg;
+    //         for(i = 1; i < STAGE + 1; i = i + 1) begin                  //Stimulate Pipeline Stage
+    //             pipe_mac[i]    <= pipe_mac[i-1];
+    //         end
+    //     end
+    // end
 
 endmodule
