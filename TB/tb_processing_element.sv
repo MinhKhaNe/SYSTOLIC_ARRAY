@@ -351,7 +351,7 @@ module tb_processing_element;
         check_act_wei(16'h6, act_out);
         check_result(48'd245, MAC_out);
 
-        $display("\n===== Case 5: Cscan_en Signal Check =====");      
+        $display("\n===== Case 5: Scan Chain Signal Check =====");      
         reg_clear = 1;
         @(posedge clk);
         #1;
@@ -462,7 +462,94 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'd0, wei_out);
         check_act_wei(16'd0, act_out);
-        check_result(48'd7000, MAC_out);        
+        check_result(48'd7000, MAC_out);   
+
+        $display("\n===== Case 8: Cscan_en Signal Check =====");      
+        reg_clear = 1;
+        repeat (STAGE + 3) @(posedge clk);
+        #1;
+        reg_clear = 0; cell_en = 1; pipeline_en = 1;    
+        act = 10; wei = 10; cscan_en = 0; cell_sc_en = 1; MAC_in = 2;
+        repeat (STAGE + 3) @(posedge clk);                              //8clk
+        #1;                     
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd10, wei_out);
+        check_act_wei(16'd10, act_out);
+        check_result(48'd100, MAC_out);                                 //100-900 (10clk - 1 reset clk)
+
+        //Transmit MAC_in OUTPUT
+        act = 10; wei = 10; cscan_en = 1; cell_sc_en = 1; MAC_in = 2;
+        @(posedge clk);                                                 //1clk
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd10, wei_out);
+        check_act_wei(16'd10, act_out);
+        check_result(48'd2, MAC_out);
+
+        //Local MAC still counting
+        act = 10; wei = 10; cscan_en = 0; cell_sc_en = 1; MAC_in = 2;
+        @(posedge clk);                                                 //1clk 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd10, wei_out);
+        check_act_wei(16'd10, act_out);
+        check_result(48'd300, MAC_out);
+
+        act = 20; wei = 20; cscan_en = 1; cell_sc_en = 1; MAC_in = 1000;
+        @(posedge clk);                                                 //1clk 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd20, act_out);
+        check_result(48'd1000, MAC_out);
+
+        act = 10; wei = 10; cscan_en = 0; cell_sc_en = 1; MAC_in = 2;
+        repeat (3)@(posedge clk);                                        //3clk 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd10, wei_out);
+        check_act_wei(16'd10, act_out);
+        check_result(48'd700, MAC_out);
+
+        act = 20; wei = 20; cscan_en = 1; cell_sc_en = 1; MAC_in = 20000;
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd20, act_out);
+        check_result(48'd20000, MAC_out);
+
+        cscan_en = 0;
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd20, act_out);
+        check_result(48'd900, MAC_out);
+
+        //act and wei = 20 only 1 clk
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd20, act_out);
+        check_result(48'd1300, MAC_out);
+
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd20, act_out);
+        check_result(48'd1400, MAC_out);
 
         #10;
         $stop;
