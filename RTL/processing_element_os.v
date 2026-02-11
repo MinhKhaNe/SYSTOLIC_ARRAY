@@ -174,8 +174,8 @@ module processing_element_os #(                         //Output Sationary (Stor
                 mac_buffer    <= {WIDTH_MAC{1'b0}};
             else if(cscan_en)
                 mac_buffer    <= MAC_IN;
-            else if(mac_is_valid && ~cscan_en && pipeline_in)                                       //Transmit value to MAC Buffer after finish pipeline
-                mac_buffer    <= mac_reg;
+            else if(mac_is_valid && ~cscan_en && pipeline_in)                                    //Stop update value when pipeline_en or cell_en is low   
+                mac_buffer    <= mac_reg;                                                        //Transmit value to MAC Buffer after finish pipeline
         end
     end
 
