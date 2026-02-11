@@ -6,31 +6,32 @@ module Adder_gear #(
 	parameter 	WIDTH_A = 16,
 	parameter 	WIDTH_B = 16
 )(
-	input	wire	[WIDTH_A-1:0]			A,
-	input	wire	[WIDTH_B-1:0]			B,
-	input	wire					Carry,	//do not use Carry
+	input	wire	[WIDTH_A-1:0]					A,
+	input	wire	[WIDTH_B-1:0]					B,
+	input	wire									Carry,	//do not use Carry
 
 	output	wire	[`max(WIDTH_A, WIDTH_B)-1:0]	OUT
 );
 
-	parameter BITS 	= `max(WIDTH_A, WIDTH_B);
-	parameter L 	= R + P;				//sub-adder length
-	parameter k	= int'($ceil(1 + ((BITS-L)/R)));	//number of loops
-	parameter N	= L + (k-1)*R;				//real width of sum
+	parameter 			BITS 	= `max(WIDTH_A, WIDTH_B);
+	parameter 			L 		= R + P;								//sub-adder length
+	parameter 	integer k 		= 1 + ((BITS - L + R - 1) / R);			//number of loops
+	parameter 			N		= L + (k-1)*R;							//real width of sum
 
 	wire	signed	[N-1:0]			Sum;
 	wire	signed	[BITS-1:0] 		a;
 	wire	signed	[BITS-1:0] 		b;
-	wire	signed	[k-1:0][L-1:0]		subadd_A; 
-	wire	signed	[k-1:0][L-1:0]		subadd_B; 
-	wire	signed	[k-1:0][N:0]		subadd_sum;
+	wire	signed	[L-1:0]			subadd_A [k-1:0]; 
+	wire	signed	[L-1:0]			subadd_B [k-1:0]; 
+	wire	signed	[N:0]			subadd_sum [k-1:0];
 	
 	assign	a = {{{BITS-WIDTH_A}{A[WIDTH_A-1]}}, A};	//sign extend
 	assign	b = {{{BITS-WIDTH_B}{B[WIDTH_B-1]}}, B};	//sign extend
 
 	genvar i;
 	generate
-		for(i=0; i<k; i++) begin
+		for(i=0; i<k; i=i+1) begin
+			//Create Sub-Adder
 			assign subadd_A[i] = a[i*R+:L];
 			assign subadd_B[i] = b[i*R+:L];
 
