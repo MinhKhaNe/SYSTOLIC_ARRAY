@@ -256,13 +256,21 @@ module tb_processing_element;
         check_act_wei(16'h3, act_out);
         check_result(48'h2, MAC_out);
 
-        repeat (STAGE + 2)@(posedge clk);                           //7 clk 3-4-5-6-7-16-25    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7 because reg_clear)
+        repeat (STAGE)@(posedge clk);                          
         #1;
         check_bit(1'b1, cell_out);
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h3, wei_out);
         check_act_wei(16'h3, act_out);
-        check_result(48'd25, MAC_out);                              //8 clk counting 16-25-34-43-52-61-70-79
+        check_result(48'd7, MAC_out);                             
+
+        repeat (1)@(posedge clk);                               //7 clk 3-4-5-6-7-16-25    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7 because reg_clear)
+        #1;
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'h3, wei_out);
+        check_act_wei(16'h3, act_out);
+        check_result(48'd16, MAC_out);                              //7 clk counting 16-25-34-43-52-61-70
   
         //CHECK STOP
         act = 16'h4; wei = 16'h4; pipeline_en = 0; Thres = 2'b00; cscan_en = 0; cell_en = 1; cell_sc_en = 1;
@@ -272,7 +280,7 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h3, wei_out);
         check_act_wei(16'h3, act_out);
-        check_result(48'd25, MAC_out);
+        check_result(48'd16, MAC_out);
 
         repeat (STAGE + 2) @(posedge clk);                          //OFF   
         #1;                                                 
@@ -280,7 +288,7 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h3, wei_out);
         check_act_wei(16'h3, act_out);
-        check_result(48'd25, MAC_out);
+        check_result(48'd16, MAC_out);
 
         act = 16'h5; wei = 16'h5; pipeline_en = 1; Thres = 2'b00; cscan_en = 0; cell_en = 1; cell_sc_en = 1;
         @(posedge clk);                                             //Wait for MAC_OUT come
@@ -289,15 +297,23 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h5, wei_out);
         check_act_wei(16'h5, act_out);
-        check_result(48'd34, MAC_out);
+        check_result(48'd25, MAC_out);
 
-        repeat (STAGE + 2)@(posedge clk);                           //7 clk 43-52-61-70-79-104-129    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7)
+        repeat (STAGE)@(posedge clk);                          
         #1;
         check_bit(1'b1, cell_out);
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h5, wei_out);
         check_act_wei(16'h5, act_out);
-        check_result(48'd129, MAC_out);                             //8 clk counting 104-129-154-179-204-229-254-279
+        check_result(48'd70, MAC_out); 
+
+        repeat (1)@(posedge clk);                                  //7 clk 43-52-61-70-79-104-129    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7)
+        #1;
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'h5, wei_out);
+        check_act_wei(16'h5, act_out);
+        check_result(48'd95, MAC_out);                             //7 clk counting 95-120-145-170-195-220-245
 
         //CHECK STOP
         act = 16'h6; wei = 16'h6; pipeline_en = 0; Thres = 2'b00; cscan_en = 0; cell_en = 1; cell_sc_en = 1;          
@@ -307,7 +323,7 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h5, wei_out);
         check_act_wei(16'h5, act_out);
-        check_result(48'd129, MAC_out);
+        check_result(48'd95, MAC_out);
 
         repeat (STAGE + 2) @(posedge clk);                          //OFF   
         #1;                                                 
@@ -315,17 +331,25 @@ module tb_processing_element;
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h5, wei_out);
         check_act_wei(16'h5, act_out);
-        check_result(48'd129, MAC_out);
+        check_result(48'd95, MAC_out);
 
         //CHECK final value of act and wei = 5 loop
         pipeline_en = 1;
-        repeat (STAGE + 1) @(posedge clk);                          //OFF 
+        repeat (1) @(posedge clk);                          
         #1;                    
         check_bit(1'b1, cell_out);
         check_bit(1'b0, c_switch_out);
         check_act_wei(16'h6, wei_out);
         check_act_wei(16'h6, act_out);
-        check_result(48'd279, MAC_out);
+        check_result(48'd120, MAC_out);
+
+        repeat (STAGE) @(posedge clk);                          
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'h6, wei_out);
+        check_act_wei(16'h6, act_out);
+        check_result(48'd245, MAC_out);
 
         
         #10;
