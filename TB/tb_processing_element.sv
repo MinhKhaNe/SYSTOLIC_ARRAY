@@ -307,7 +307,7 @@ module tb_processing_element;
         check_act_wei(16'h5, act_out);
         check_result(48'd70, MAC_out); 
 
-        repeat (1)@(posedge clk);                                  //7 clk 43-52-61-70-79-104-129    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7)
+        @(posedge clk);                                  //7 clk 43-52-61-70-79-104-129    (pipeline_en = 1 high for 8 clk -> MAC calculates 7 times from 1-7)
         #1;
         check_bit(1'b1, cell_out);
         check_bit(1'b0, c_switch_out);
@@ -335,7 +335,7 @@ module tb_processing_element;
 
         //CHECK final value of act and wei = 5 loop
         pipeline_en = 1;
-        repeat (1) @(posedge clk);                          
+        @(posedge clk);                          
         #1;                    
         check_bit(1'b1, cell_out);
         check_bit(1'b0, c_switch_out);
@@ -351,7 +351,119 @@ module tb_processing_element;
         check_act_wei(16'h6, act_out);
         check_result(48'd245, MAC_out);
 
-        
+        $display("\n===== Case 5: Cscan_en Signal Check =====");      
+        reg_clear = 1;
+        @(posedge clk);
+        #1;
+        reg_clear = 0; cell_en = 1; pipeline_en = 1;
+        cell_sc_en = 1;
+        @(posedge clk);
+        #1;
+        check_bit(1'b1, cell_out);
+
+        cell_sc_en = 0;
+        @(posedge clk);
+        #1;
+        check_bit(1'b0, cell_out);
+
+        $display("\n===== Case 6: C_switch Signal Check =====");      
+        reg_clear = 1;
+        repeat (STAGE + 3) @(posedge clk);
+        #1;
+        reg_clear = 0; cell_en = 1; pipeline_en = 1; cscan_en = 0; cell_sc_en = 1;
+        MAC_in = 100; c_switch = 0; act = 1; wei = 1;
+        repeat (STAGE + 3) @(posedge clk);                          
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd1, wei_out);
+        check_act_wei(16'd1, act_out);
+        check_result(48'd1, MAC_out);
+
+        MAC_in = 100; c_switch = 1; act = 2; wei = 2;
+        @(posedge clk);                          
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd2, wei_out);
+        check_act_wei(16'd2, act_out);
+        check_result(48'd2, MAC_out);
+
+        repeat (STAGE + 1) @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd2, wei_out);
+        check_act_wei(16'd2, act_out);
+        check_result(48'd11, MAC_out);
+
+        $display("\n===== Case 7: Zero Detection Check =====");      
+        reg_clear = 1;
+        repeat (STAGE + 3) @(posedge clk);
+        #1;
+        reg_clear = 0; cell_en = 1; pipeline_en = 1;
+        act = 10; wei = 10; cscan_en = 0; cell_sc_en = 1;
+        repeat (STAGE + 3) @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd10, wei_out);
+        check_act_wei(16'd10, act_out);
+        check_result(48'd100, MAC_out);             //100-200-300-400-500-600-700 (after reg_clear)
+
+        act = 0; wei = 20; cscan_en = 0; cell_sc_en = 1;
+        repeat (STAGE + 1) @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd0, act_out);
+        check_result(48'd700, MAC_out);
+
+        //Check whether MAC_out keep value or not
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd20, wei_out);
+        check_act_wei(16'd0, act_out);
+        check_result(48'd700, MAC_out);
+
+        act = 30; wei = 30; cscan_en = 0; cell_sc_en = 1;   //after 8 cycle new act and wei will be push
+        repeat(STAGE + 3) @(posedge clk);        
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd30, wei_out);
+        check_act_wei(16'd30, act_out);
+        check_result(48'd1600, MAC_out);            //1600-2500-3400-4300-5200-6100-7000
+
+        act = 40; wei = 0; cscan_en = 0; cell_sc_en = 1;
+        repeat (STAGE + 3) @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd0, wei_out);
+        check_act_wei(16'd40, act_out);
+        check_result(48'd7000, MAC_out);  
+
+        @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd0, wei_out);
+        check_act_wei(16'd40, act_out);
+        check_result(48'd7000, MAC_out);   
+
+        act = 0; wei = 0; cscan_en = 0; cell_sc_en = 1;
+        repeat (STAGE + 3) @(posedge clk); 
+        #1;                    
+        check_bit(1'b1, cell_out);
+        check_bit(1'b0, c_switch_out);
+        check_act_wei(16'd0, wei_out);
+        check_act_wei(16'd0, act_out);
+        check_result(48'd7000, MAC_out);        
+
         #10;
         $stop;
     end
