@@ -2,110 +2,105 @@
 
 module tb_multiplier_booth;
 
-	parameter WIDTH_A   = 16;
-	parameter WIDTH_B   = 16;
-	parameter WIDTH_MUL = WIDTH_A + WIDTH_B;
-	parameter SIGNED    = 0;
-	parameter STAGE     = 2;
-	parameter APPROX_TYPE = 0;
-	parameter APPROX_W    = 8;
+	localparam WIDTH_A   = 16;
+	localparam WIDTH_B   = 16;
+	localparam WIDTH_MUL = WIDTH_A + WIDTH_B;
+	localparam SIGNED    = 1;
+	localparam STAGE     = 0;
 
-	localparam WIDTH = (WIDTH_A > WIDTH_B) ? WIDTH_A : WIDTH_B;
-	localparam CNT   = (WIDTH + 1) / 2;
-	localparam LATENCY = CNT + 1 + STAGE;
-
-	logic clk;
-	logic rst_n;
-	logic pip_en;
-
-	logic [WIDTH_A-1:0] A;
-	logic [WIDTH_B-1:0] B;
-
-	wire  [WIDTH_MUL-1:0] OUT;
+	reg                     clk;
+	reg                     rst_n;
+	reg                     pip_en;
+	reg     [WIDTH_A-1:0]   A;
+	reg     [WIDTH_B-1:0]   B;
+	wire    [WIDTH_MUL-1:0] OUT;
 
 	Multiplier_booth #(
-		.APPROX_TYPE(APPROX_TYPE),
-		.APPROX_W   (APPROX_W),
-		.WIDTH_A    (WIDTH_A),
-		.WIDTH_B    (WIDTH_B),
-		.WIDTH_MUL  (WIDTH_MUL),
-		.SIGNED     (SIGNED),
-		.STAGE      (STAGE)
+		.WIDTH_A(WIDTH_A),
+		.WIDTH_B(WIDTH_B),
+		.WIDTH_MUL(WIDTH_MUL),
+		.SIGNED(SIGNED),
+		.STAGE(STAGE),
+		.APPROX_TYPE(0),
+		.APPROX_W(8)
 	) dut (
-		.clk    (clk),
-		.rst_n  (rst_n),
-		.pip_en (pip_en),
-		.A      (A),
-		.B      (B),
-		.OUT    (OUT)
+		.clk(clk),
+		.rst_n(rst_n),
+		.pip_en(pip_en),
+		.A(A),
+		.B(B),
+		.OUT(OUT)
 	);
 
 	always #5 clk = ~clk;
 
+	task run_test;
+        input signed [WIDTH_A-1:0] a_in;
+        input signed [WIDTH_B-1:0] b_in;
+        reg   signed [WIDTH_MUL-1:0] expected;
+    begin
+        A = a_in;
+        B = b_in;
+        pip_en = 1'b1;
+        repeat (12) @(posedge clk);
+        
+        expected = a_in * b_in;
+        $display("--------------------------------------------------");
+        $display("A        = %b", a_in);
+        $display("B        = %b", b_in);
+        $display("OUT      = %b", OUT);
+        $display("EXPECTED = %b", expected);
+        
+        if (OUT === expected)
+            $display("===== PASSED SUCCESSFULLY!!! =====");
+        else
+            $display("===== FAILED!!! =====");
+        rst_n = 0;
+        #10;
+        rst_n = 1;
+        pip_en = 0;
+        #10;
+    end
+    endtask
 
-	task run_test(input int a, input int b);
-		int exp;
-	begin
-		A = a;
-		B = b;
-		pip_en = 1'b1;
+	integer i_test;
+    reg signed [WIDTH_A-1:0] rand_a;
+    reg signed [WIDTH_B-1:0] rand_b;
 
-		exp = SIGNED ? ($signed(a) * $signed(b)) : (a * b);
+    initial begin
+        clk = 0;
+        rst_n = 0;
+        pip_en = 0;
+        A = 0;
+        B = 0;
 
-		// wait for result
-		repeat (LATENCY) @(posedge clk);
+        repeat(3) @(posedge clk);
+        rst_n = 1;
 
-		if (APPROX_TYPE)
-			exp = (exp >> APPROX_W) << APPROX_W;
+        $display("\n===== BOUNDARY CASES =====");
+        run_test(16'sh7FFF, 16'sh7FFF); 
+        run_test(16'sh8000, 16'sh8000); 
+        run_test(16'sh8000, -16'sh7FFF); 
+        run_test(-16'shFFFF, -16'shFFFF); 
+        run_test(-16'sh0001, -16'shFFFF); 
 
-		if (OUT !== exp) begin
-			$display("FAIL: A=%0d B=%0d | OUT=%0d EXPECT=%0d",
-			          a, b, $signed(OUT), exp);
-		end
-		else begin
-			$display("PASS: A=%0d B=%0d | OUT=%0d",
-			          a, b, $signed(OUT));
-		end
-	end
-	endtask
+        $display("\n===== POWER OF 2 =====");
+        run_test(16'sd1024, -16'sd16);   
+        run_test(16'sd2,    -16'sd4096); 
+        run_test(-16'sd2,   16'sd2048);
 
-	initial begin
-		$dumpfile("tb_multiplier_booth.vcd");
-		$dumpvars(0, tb_multiplier_booth);
+        $display("\n===== BIT PATTERN STRESS =====");
+        run_test(16'hAAAA, 16'h5555); 
+        run_test(16'hFFFF, 16'h0001);
 
-		clk   = 0;
-		rst_n = 0;
-		pip_en = 0;
-		A = 0;
-		B = 0;
-
-		// reset
-		repeat (3) @(posedge clk);
-		rst_n = 1;
-
-		// wait after reset
-		repeat (2) @(posedge clk);
-
-		run_test(3, 5);
-		run_test(7, 9);
-		run_test(12, 4);
-		run_test(15, 15);
-
-		if (SIGNED) begin
-			run_test(-3, 7);
-			run_test(-8, -4);
-			run_test(6, -5);
-		end
-
-		// random tests
-		repeat (5) begin
-			run_test($urandom_range(0, 100),
-			         $urandom_range(0, 100));
-		end
-
-		$display("All tests finished");
-		#20;
-		$finish;
-	end
+        $display("\n===== RANDOM TESTING - 100 CASES =====");
+        for (i_test = 0; i_test < 100; i_test = i_test + 1) begin
+            rand_a = $random;
+            rand_b = $random;
+            run_test(rand_a, rand_b);
+        end
+        
+        $finish;
+    end
 
 endmodule
