@@ -1,79 +1,147 @@
-module processing_element_is #(
-    parameter   WIDTH_A             = 16,
-    parameter   WIDTH_B             = 16,
-    parameter   WIDTH_MAC           = 48,
-    parameter   WIDTH_T             = 2,
-    parameter   ZERO_GATING_MULT    = 1,
-    parameter   ZERO_GATING_ADD     = 1,
-    parameter   STAGE               = 0
+module processing_element_is #(                         //Input Sationary (Store Activation, transfer Weight and MAC)
+    parameter   WIDTH_A             = 16,               //Width of A
+    parameter   WIDTH_B             = 16,               //Width of B
+    parameter   WIDTH_MAC           = 48,               //Width of MAC
+    parameter   WIDTH_T             = 2,                //Width of threshold
+    parameter   ZERO_GATING_MULT    = 1,                //
+    parameter   ZERO_GATING_ADD     = 1,                //
+    parameter   MM_APPROX           = 1,                //
+    parameter   M_APPROX            = 1,                //
+    parameter   AA_APPROX           = 1,                //
+    parameter   A_APPROX            = 1,                //
+    parameter   MUL_TYPE            = 0,                //Choosing Multiplier
+    parameter   ADD_TYPE            = 0,                //Choosing Adder
+    parameter   STAGE               = 0,                //Number of Stage of pipeline
+    parameter   ARITHMETIC          = 0,
+    parameter   SIGNED              = 0,
+
+    parameter   INTERMEDIATE_PIPELINE_STAGE = 0
+
 )(
     input   wire                    clk,
     input   wire                    rst_n,
-    input   wire    [WIDTH_A-1:0]   A,              //activation
-    input   wire    [WIDTH_B-1:0]   B,              //weight
-    input   wire    [WIDTH_MAC-1:0] MAC_IN,
+    input   wire    [WIDTH_A-1:0]   act,                //activation 
+    input   wire    [WIDTH_B-1:0]   wei,                //weight
+    input   wire    [WIDTH_MAC-1:0] MAC_IN,             //transport value to next PE to push out
 
-    input   wire                    pipeline_en,
-    input   wire                    reg_clear,
-    input   wire                    cell_en,
-    input   wire                    cell_sc_en,
-    input   wire                    c_switch,
-    input   wire                    cscan_en,
+    input   wire                    pipeline_en,        //stimulate pipeline
+    input   wire                    reg_clear,          //Clear Registers
+    input   wire                    cell_en,            //Enable signal allows PE working
+    input   wire                    cell_sc_en,         //Enable signal for next PE
+    input   wire                    c_switch,           //Switch value between internal Accumulate and input Accumulate (Off because Output Stationary)
+    input   wire                    cscan_en,           //enable push MAC to output
 
-    input   wire    [WIDTH_T-1:0]   Thres,
+    input   wire    [WIDTH_T-1:0]   Thres,              //Threshold for zero detection
 
-    output  wire                    cell_out,
+    output  wire                    cell_out,           //Cell_enable output for next PE
+    output  wire                    c_switch_out,
 
-    output  wire    [WIDTH_A-1:0]   acc_out,
-    output  wire    [WIDTH_B-1:0]   weight_out,
-    output  wire    [WIDTH_MAC-1:0] MAC_OUT             //MAC
+    output  wire    [WIDTH_A-1:0]   wei_out,            //do not flow out
+    output  wire    [WIDTH_B-1:0]   act_out,            //Activation Out
+    output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
 );
 
     parameter   ZERO_DETECTION  = ZERO_GATING_ADD | ZERO_GATING_MULT;
+    parameter   MUL_W           = (ARITHMETIC==0)   ?   (WIDTH_A+WIDTH_B) : WIDTH_MAC;
 
-    reg     [WIDTH_MAC-1:0]         mac_reg;
-    wire    [WIDTH_MAC-1:0]         mac_switch;
+    reg     [WIDTH_A-1:0]           act_reg;            //Act go to PE first
+
+    wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;       
+    // reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
+    wire    [WIDTH_A-1:0]           act_zd;
+    wire    [WIDTH_B-1:0]           wei_zd;
     reg                             cell_reg;
-    reg                             pipeline_in;
-    reg                             Zero_detected;
+    wire                            pipeline_in;
+    wire                            Zero_detected;
+    wire    [MUL_W-1:0]             mul_value;
+    wire                            mul_mux_sel;
+    wire                            zero, mac_is_valid;
+    reg     [STAGE:0]               pipe_valid, zero_pipe;
+    wire                            zero_chk;
+    reg     [WIDTH_MAC-1:0]         mac_buffer;
+    integer                         i;
 
-    assign  pipeline_in = pipeline_en & cell_en;
-    assign  mac_switch  = c_switch ? mac_reg : MAC_IN;
+    assign  mul_mux_sel     = 1'b0;                             //
+    assign  pipeline_in     = pipeline_en && cell_en;           //Internal pipeline signal
+    assign  c_switch_out    = 1'b0;                             //
+    assign  wei_out         = wei;                          //Push WEIGHT to next PE
+    assign  act_out         = {WIDTH_A{1'b0}};                          //Push Activation to next PE
+    assign  act_zd          = zero  ? {WIDTH_A{1'b0}} : act_reg;
+    assign  wei_zd          = zero  ? {WIDTH_B{1'b0}} : wei;
+    assign  zero            = ZERO_DETECTION    ? Zero_detected : 1'b0;
+
 
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
         .WIDTH_B(WIDTH_B),
         .WIDTH_T(WIDTH_T)
     ) zd0 (
-        .A(A),
-        .B(B),
+        .A(act_reg),
+        .B(wei),
         .Thres(Thres),
         .Zero(Zero_detected)
     );
 
-    fma_wrapper_ofBSC #(
-        .MUL_TYPE(MUL_TYPE),
-        .M_APPROX(M_APPROX),
-        .MM_APPROX(MM_APPROX),
-        .ADD_TYPE(ADD_TYPE),
-        .A_APPROX(A_APPROX),
-        .AA_APPROX(AA_APPROX),
-        .STAGES(STAGE),
-        .INTERMEDIATE_PIPELINE_STAGE(INTERMEDIATE_PIPELINE_STAGE),
-        .ZERO_GATING_MULT(ZERO_GATING_MULT),
-        .FP_W(WIDTH_A)
-    ) fma_i (
-        .i_clk		        (clk),
-        .i_rstn		        (rst_n && (reg_clear)),
-        .i_a		        (a_zd_q),
-        .i_b		        (b_zd_q),
-        .i_c                (mac_q_zd),
-        .i_msel             (mul_mux_sel),
-        .i_pipeline_en      (pipeline_en),
-        .o_c		        (mac_d)
-    );
+    generate
+        if (ARITHMETIC) begin                                   //If ARITHMETIC is 1, choosing value from FMA
+            fma_wrapper_ofBSC #(
+                .MUL_TYPE(MUL_TYPE),
+                .M_APPROX(M_APPROX),
+                .MM_APPROX(MM_APPROX),
+                .ADD_TYPE(ADD_TYPE),
+                .A_APPROX(A_APPROX),
+                .AA_APPROX(AA_APPROX),
+                .STAGES(STAGE),
+                .INTERMEDIATE_PIPELINE_STAGE(INTERMEDIATE_PIPELINE_STAGE),
+                .ZERO_GATING_MULT(ZERO_GATING_MULT),
+                .FP_W(WIDTH_A)
+            ) fma_i (
+                .i_clk		        (clk),
+                .i_rstn		        (rst_n && (!reg_clear)),
+                .i_a		        (act_reg),                   //after zero detection
+                .i_b		        (wei_zd),                   //after zero detection
+                .i_c                (MAC_IN),                
+                .i_msel             (mul_mux_sel),
+                .i_pipeline_en      (pipeline_en),
+                .o_c		        (mac_out_fma)
+            );
+        end 
+        else begin                                              //If ARITHMETIC is 0, choosing value from ADDER and MULTIPLIER
+            Adder_generic #(
+                .WIDTH_A(WIDTH_MAC),
+                .WIDTH_B(MUL_W),
+                .WIDTH_OUT(WIDTH_MAC),
+                .AA_APPROX(AA_APPROX),
+                .A_APPROX(A_APPROX),
+                .ADD_TYPE(ADD_TYPE),
+                .SIGNED(1'b1)
+            ) a0 (
+                .A(MAC_IN),
+                .B(mul_value),
+                .Carry(0),
+                .OUT(mac_out_adder)
+            );
 
-    
+            Multiplier_generic #(
+                .WIDTH_A(WIDTH_A),
+                .WIDTH_B(WIDTH_B),
+                .MM_APPROX(MM_APPROX),
+                .M_APPROX(M_APPROX),
+                .MUL_TYPE(MUL_TYPE),
+                .WIDTH_MUL(WIDTH_A+WIDTH_B),
+                .SIGNED(1'b1),
+                .STAGE(STAGE)
+            ) m0 (
+                .clk(clk),
+                .rst_n(rst_n),
+                .pipeline_en(pipeline_in && ~Zero_detected),
+                .A(act_zd),
+                .B(wei_zd),
+                .OUT(mul_value)
+            );
+        end
+    endgenerate
+
     //Handle cell_enable for next PE
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
@@ -89,16 +157,60 @@ module processing_element_is #(
 
     assign cell_out = cell_reg;
 
-    //
+    //Push MAC value out
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
-
+           mac_buffer  <= {WIDTH_MAC{1'b0}};
         end
         else begin
-
+            if(reg_clear) begin
+                mac_buffer  <= {WIDTH_MAC{1'b0}};
+            end
+            else begin
+                mac_buffer  <= ARITHMETIC ? mac_out_fma : mac_out_adder;    //Using ARITHMETIC value to check value between fma and (mul with adder)    
+            end
         end
     end
 
-    assign
+    assign  MAC_out = mac_buffer;
+
+    // //When finish all STAGE, pipe_valid is HIGH
+    // always @(posedge clk or negedge rst_n) begin
+    //     if(!rst_n) begin
+    //         pipe_valid  <= {(STAGE+1){1'b0}};
+    //     end 
+    //     else begin
+    //         if(reg_clear)
+    //             pipe_valid  <= {(STAGE+1){1'b0}};
+    //         else if(pipeline_in)
+    //             pipe_valid  <= {pipe_valid[STAGE-1:0], pipeline_en};    //Shift bit to check
+    //     end
+    // end
+
+    // //Zero pipeline
+    // always @(posedge clk or negedge rst_n) begin
+    //     if(!rst_n) begin
+    //         zero_pipe  <= {(STAGE+1){1'b0}};
+    //     end
+    //     else begin
+    //         if(reg_clear)
+    //             zero_pipe  <= {(STAGE+1){1'b0}};
+    //         else if(pipeline_in)
+    //             zero_pipe  <= {zero_pipe[STAGE-1:0], Zero_detected};        //Shift bit to check
+    //     end
+    // end
+
+    //Activation register
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            act_reg        <= 1'b0;
+        end
+        else begin
+            if(reg_clear)
+                act_reg   <= 1'b0;
+            else if(cell_en && ~pipeline_en)
+                act_reg    <= act
+        end
+    end
 
 endmodule
