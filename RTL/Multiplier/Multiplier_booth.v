@@ -22,9 +22,10 @@ module Multiplier_booth #(
 	parameter cnt	= (WIDTH + 1)/2;			//Radix-4 only need n/2
 
 	wire			[2:0]				Q;
-	wire	signed	[WIDTH_MUL+1:0]		A_sign;
+	wire	signed	[WIDTH_MUL-1:0]		A_ext;
 	wire			[WIDTH_B+2:0]		B_ext;
 	wire								done;
+	reg									done_reg;
 	
 	reg 	signed 	[WIDTH_MUL-1:0] 	OUT_final;
 	reg		signed	[WIDTH_MUL-1:0]		product;
@@ -32,44 +33,40 @@ module Multiplier_booth #(
 	reg 	signed 	[WIDTH_MUL-1:0] 	pipe_reg [0:STAGE];
 	integer 							p;
 
-	assign 	Q = 	(i==0) 	? {B_ext[2*i+1], B_ext[2*i], 1'b0} :
-		    		(i<cnt) ? {B_ext[2*i+1], B_ext[2*i], B_ext[2*i-1]}:
-					3'b000;
+	assign 	Q = 	B_ext[2*i +: 3];
 
-	assign	A_sign 	= SIGNED ? $signed({{WIDTH_B{A[WIDTH_A-1]}} , A}) : $signed({{WIDTH_B{1'b0}}, A});	
+	assign	A_ext 	= SIGNED ? $signed({{WIDTH_B{A[WIDTH_A-1]}} , A}) : $signed({{WIDTH_B{1'b0}}, A});	
 	assign 	B_ext 	= SIGNED ? {{2{B[WIDTH_B-1]}}, B, 1'b0} : {2'b0, B, 1'b0};	
-	assign	done	= (i == cnt);
+	assign	done	= done_reg;
 
 	always @(posedge clk or negedge rst_n) begin
 		if(!rst_n) begin
-			product	<= {WIDTH_MUL{1'b0}};
-			i	<= 6'b0;
-			OUT_final	<= {WIDTH_MUL{1'b0}};
+			product		<= {WIDTH_MUL{1'b0}};
+			i			<= 6'b0;
+			done_reg	<= 1'b0;
 		end
 		else if (pip_en) begin
 			if(i<cnt) begin
 				case(Q)
 					3'b000: product	<= product;
-					3'b001: product	<= $signed(product) + ($signed(A_sign) << (2*i));
-					3'b010: product	<= $signed(product) + ($signed(A_sign) << (2*i));
-					3'b011: product	<= $signed(product) + ($signed(A_sign) << (2*i+1));
-					3'b100: product	<= $signed(product) - ($signed(A_sign) << (2*i+1));
-					3'b101: product	<= $signed(product) - ($signed(A_sign) << (2*i));
-					3'b110: product	<= $signed(product) - ($signed(A_sign) << (2*i));
+					3'b001: product	<= product + (A_ext << (2*i));
+					3'b010: product	<= product + (A_ext << (2*i));
+					3'b011: product	<= product + (A_ext << (2*i+1));
+					3'b100: product	<= product - (A_ext << (2*i+1));
+					3'b101: product	<= product - (A_ext << (2*i));
+					3'b110: product	<= product - (A_ext << (2*i));
 					3'b111: product	<= product;
 				endcase
 				i <= i + 1'b1;
+				if(i == (cnt -1))
+					done_reg	<= 1'b1;
+				else 
+					done_reg	<= 1'b0;
 			end
-			else if(i==cnt) begin
-				if(APPROX_TYPE) begin
-					OUT_final	<= {product[WIDTH_MUL-1:APPROX_W], {APPROX_W{1'b0}}};
-				end
-				else begin
-					OUT_final	<= product;
-				end
-
-				i 	<= 6'b0;
-				product <= {WIDTH_MUL{1'b0}};
+			else begin
+				product		<= {WIDTH_MUL{1'b0}};
+				i			<= 6'b0;
+				done_reg	<= 1'b0;
 			end
 		end
 	end
@@ -81,7 +78,11 @@ module Multiplier_booth #(
 			end
 		end
 		else if (pip_en && done) begin
-    		pipe_reg[0] <= OUT_final;
+    		if(APPROX_TYPE)
+				pipe_reg[0] <= {product[WIDTH_MUL-1:APPROX_W], {APPROX_W{1'b0}}};
+			else
+				pipe_reg[0]	<= product;
+
     		for (p = 1; p <= STAGE; p = p + 1) begin
         		pipe_reg[p] <= pipe_reg[p-1];
 			end
