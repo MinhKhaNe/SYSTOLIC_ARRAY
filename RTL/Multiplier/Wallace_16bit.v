@@ -7,7 +7,7 @@ module Wallace_16bit #(
     output  wire    [31:0]   OUT        //only low bit right
 );
 
-    wire    [7:0]   A1, A2, B1, B2;
+    wire    [7:0]    A1, A2, B1, B2;
     wire    [15:0]   A1_B1, A1_B2, A2_B1, A2_B2;
     wire    [15:0]   partial_1, partial_2, partial_3;
 
@@ -47,13 +47,14 @@ module Wallace_16bit #(
         .B(B2),
         .OUT(A2_B2)
     );
-
+    
+    //Carry region between partial products
     assign  partial_1 = A1_B1[15:8] + A2_B1[7:0] + A1_B2[7:0];
-
+    //Combine next aligned bytes
     assign  partial_2 = partial_1[15:8] + A2_B1[15:8] + A1_B2[15:8] + A2_B2[7:0];
-
+    //Highest carry region
     assign  partial_3 = A2_B2[15:8] + partial_2[15:8];
-
+    //Final product
     assign OUT = {partial_3[7:0], partial_2[7:0], partial_1[7:0], A1_B1[7:0]};
 
 endmodule
