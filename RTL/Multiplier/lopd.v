@@ -4,11 +4,11 @@ module lopd(
 )(
 	input	wire	[WIDTH_I-1:0]	in,
 
-	output	reg	[WIDTH_L-1:0]	out
+	output	reg		[WIDTH_L-1:0]	out
 );
 	integer			i;
 
-	//Log2 function
+	//Log2 function for finding width of input
 	function automatic integer clog2;
         input integer value;
         integer i;
