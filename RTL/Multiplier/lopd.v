@@ -8,6 +8,7 @@ module lopd(
 );
 	integer			i;
 
+	//Log2 function
 	function automatic integer clog2;
         input integer value;
         integer i;
@@ -17,7 +18,8 @@ module lopd(
                 clog2 = clog2 + 1;
         end
     endfunction
-	
+
+	//When bit 1 is detected, stop at that position and print output
 	always @(*) begin
 		for(i=0; i<WIDTH_I; i=i+1) begin
 			if(in[i]) 
