@@ -1,5 +1,5 @@
-# SAURIA_CORE
-RTL code of SAURIA Core and testbench to test each module
+# SYSTOLIC_ARRAY
+RTL code of Systolic Array in SAURIA Core and testbench to test each module
 
 ## 1. ADDER
 ###   a. Adder Gear (Generic Error-tolerant Adder):
