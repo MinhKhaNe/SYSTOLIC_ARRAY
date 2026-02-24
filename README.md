@@ -64,4 +64,32 @@ RTL code of SAURIA Core and testbench to test each module
 - Input activation and weight are multiplied and accumulated locally.
 - The final output is written out only after the accumulation is complete.
 
+###   b. Input-Stationary Processing Element Block Diagram (PE_IS)
+<p align="center">
+  <a href="image/PE_IS.png">
+    <img src="image/PE_IS.png" width="50%">
+  </a>
+</p>
+
+- An Input-Stationary Processing Element designed for MAC operations.
+- Each PE contains a local activation register that keeps the input activation stationary during computation.
+- Input activations remain inside the PE, while weights stream through the array.
+- Incoming weights are multiplied with the locally stored activation.
+- The multiplication results are accumulated with incoming partial sums.
+- Partial sums propagate through the array until the final result is produced.
+
+###   c. Weight-Stationary Processing Element Block Diagram (PE_WS)
+<p align="center">
+  <a href="image/PE_WS.png">
+    <img src="image/PE_WS.png" width="50%">
+  </a>
+</p>
+
+- An Output-Stationary Processing Element designed for MAC operations.
+- Each PE contains a local weight register that keeps the weight stationary during computation.
+- Weights remain inside the PE, while input activations stream through the array.
+- Incoming activations are multiplied with the locally stored weight.
+- The multiplication results are accumulated into a local accumulator.
+- The final output is written out after all activations have been processed.
+
 ## 4. SYSTOLIC ARRAY
