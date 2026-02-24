@@ -27,7 +27,7 @@ module processing_element_is #(                         //Input Sationary (Store
     input   wire                    pipeline_en,        //stimulate pipeline
     input   wire                    reg_clear,          //Clear Registers
     input   wire                    cell_en,            //Enable signal allows PE working
-    input   wire                    cell_sc_en,         //Enable signal for next PE
+    input   wire                    cell_sc_en,         //Enable signal for next PE to take Activation  
     input   wire                    c_switch,           //Switch value between internal Accumulate and input Accumulate (Off because Output Stationary)
     input   wire                    cscan_en,           //enable push MAC to output
 
@@ -36,6 +36,7 @@ module processing_element_is #(                         //Input Sationary (Store
     output  wire                    cell_out,           //Cell_enable output for next PE
     output  wire                    c_switch_out,
 
+    output  wire    [WIDTH_B-1:0]   act_reg_out,               
     output  wire    [WIDTH_A-1:0]   wei_out,            //weight out
     output  wire    [WIDTH_B-1:0]   act_out,            //do not flow out
     output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
@@ -46,30 +47,32 @@ module processing_element_is #(                         //Input Sationary (Store
 
     reg     [WIDTH_A-1:0]           act_reg, act_out_reg;                   //Act go to PE first
     wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;         
-    wire    [WIDTH_A-1:0]           act_zd;
-    wire    [WIDTH_B-1:0]           wei_zd;
-    reg     [WIDTH_B-1:0]           wei_reg;
+    // wire    [WIDTH_A-1:0]           act_zd;
+    // wire    [WIDTH_B-1:0]           wei_zd;
     // reg                             cell_reg;
     wire                            pipeline_in;
     wire                            Zero_detected;
     wire    [MUL_W-1:0]             mul_value;
     wire                            mul_mux_sel;
     wire                            mac_is_valid, zero;
-    reg     [STAGE:0]               pipe_valid, cell_pipe;
+    reg     [STAGE:0]               pipe_valid;
+    reg     [1:0]                   cell_pipe;
     reg     [WIDTH_MAC-1:0]         mac_buffer;
     reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];   
+    reg     [WIDTH_B-1:0]           pipe_wei [0:STAGE];
     integer                         i;
+    reg                             act_is_valid;
 
     assign  mul_mux_sel     = 1'b0;                                         //
     assign  pipeline_in     = pipeline_en && cell_en;                       //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                                         //
-    assign  wei_out         = wei_reg;                                      //Push WEIGHT to next PE
-    assign  act_out         = act_out_reg;                                  //Push ACTIVATION to nex PE
-    assign  act_zd          = zero  ? {WIDTH_A{1'b0}} : act_reg;
-    assign  wei_zd          = zero  ? {WIDTH_B{1'b0}} : wei;
+    assign  wei_out         = pipe_wei[STAGE];                                      //Push WEIGHT to next PE
+    // assign  act_zd          = zero  ? {WIDTH_A{1'b0}} : act_reg;
+    // assign  wei_zd          = zero  ? {WIDTH_B{1'b0}} : wei;
     assign  mac_is_valid    = pipe_valid[STAGE];
-    assign  zero            = ZERO_DETECTION    ? Zero_detected : 1'b0;
-
+    assign  zero            = ZERO_DETECTION    ?   Zero_detected : 1'b0;
+    assign  act_out         = act_out_reg;                                  //Push ACTIVATION to nex PE
+    assign  act_reg_out     = act_reg;
 
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
@@ -97,9 +100,9 @@ module processing_element_is #(                         //Input Sationary (Store
                 .FP_W(WIDTH_A)
             ) fma_i (
                 .i_clk		        (clk),
-                .i_rstn		        (rst_n && (!reg_clear)),
+                .i_rstn		        (rst_n && (!reg_clear) && ~zero),
                 .i_a		        (act_reg),                   //after zero detection
-                .i_b		        (wei_zd),                   //after zero detection
+                .i_b		        (wei),                   //after zero detection
                 .i_c                (MAC_IN),                
                 .i_msel             (mul_mux_sel),
                 .i_pipeline_en      (pipeline_in),
@@ -134,9 +137,9 @@ module processing_element_is #(                         //Input Sationary (Store
             ) m0 (
                 .clk(clk),
                 .rst_n(rst_n),
-                .pipeline_en(pipeline_in),
-                .A(act_zd),
-                .B(wei_zd),
+                .pipeline_en(pipeline_in && ~zero),
+                .A(act_reg),
+                .B(pipe_wei[STAGE]),
                 .OUT(mul_value)
             );
         end
@@ -155,21 +158,26 @@ module processing_element_is #(                         //Input Sationary (Store
     //     end
     // end
 
+    // assign  cell_out    = cell_reg && act_is_valid;
+
+    //A0-cell-sc-en = 1;
+    //A1-
+    //A0 - A1 - A2 - A3
+    //cycle 1-2-3-4
+    //Delay 1 cycle for waiting next value to next PE to avoid the same value transfer to next PE
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
-            cell_pipe  <= {(STAGE+1){1'b0}};
+            cell_pipe  <= {(2){1'b0}};
         end 
         else begin
             if(reg_clear)
-                cell_pipe  <= {(STAGE+1){1'b0}};
-            else if (STAGE == 0)
-                cell_pipe <= cell_sc_en;
-            else if(pipeline_in)
-                cell_pipe <= {cell_pipe[STAGE-1:0], cell_sc_en};
+                cell_pipe  <= {(2){1'b0}};
+            else 
+                cell_pipe <= {cell_pipe[1:0], cell_sc_en};
         end
     end
 
-    assign cell_out = cell_pipe[STAGE];
+    assign cell_out = cell_pipe[1] && act_is_valid;
 
     //Push MAC value out
     always @(posedge clk or negedge rst_n) begin
@@ -206,29 +214,31 @@ module processing_element_is #(                         //Input Sationary (Store
     //Activation register
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
-            act_reg        <= {WIDTH_A{1'b0}};
+            act_reg         <= {WIDTH_A{1'b0}};
+            act_is_valid    <= 1'b0;
         end
         else begin
-            if(reg_clear)
-                act_reg     <= {WIDTH_A{1'b0}};
-            else if(cell_sc_en)                     //When cell_sc_en signal is high, act_reg stores value of act_in
-                act_reg     <= act;
+            if(reg_clear) begin
+                act_reg         <= {WIDTH_A{1'b0}};
+                act_is_valid    <= 1'b0;
+            end
+            else if(cell_sc_en && ~act_is_valid) begin                     //When cell_sc_en signal is high, act_reg stores value of act_in
+                act_reg         <= act;
+                act_is_valid    <= 1'b1;
+            end
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             act_out_reg        <= {WIDTH_A{1'b0}};
-            wei_reg            <= {WIDTH_B{1'b0}};
         end
         else begin
             if(reg_clear) begin
                 act_out_reg    <= {WIDTH_A{1'b0}};
-                wei_reg        <= {WIDTH_B{1'b0}};
             end
             else begin
                 act_out_reg    <= act;
-                wei_reg        <= wei;
             end
         end
     end
@@ -236,18 +246,22 @@ module processing_element_is #(                         //Input Sationary (Store
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             for(i = 0; i < STAGE + 1; i = i + 1) begin
-                pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
+                pipe_mac[i]     <= {WIDTH_MAC{1'b0}};
+                pipe_wei[i]     <= {WIDTH_B{1'b0}};
             end
         end
         else if(reg_clear) begin
             for(i = 0; i <= STAGE; i = i + 1) begin
-                pipe_mac[i] <= {WIDTH_MAC{1'b0}};
+                pipe_mac[i]     <= {WIDTH_MAC{1'b0}};
+                pipe_wei[i]     <= {WIDTH_B{1'b0}};
             end
         end
         else if(pipeline_in) begin
             pipe_mac[0] <= MAC_IN;
+            pipe_wei[0] <= wei;
             for(i = 1; i < STAGE + 1; i = i + 1) begin                  //Stimulate Pipeline Stage
                 pipe_mac[i]    <= pipe_mac[i-1];
+                pipe_wei[i]    <= pipe_wei[i-1];
             end
         end
     end
