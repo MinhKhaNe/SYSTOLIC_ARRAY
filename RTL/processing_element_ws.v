@@ -94,7 +94,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
                 .FP_W(WIDTH_A)
             ) fma_i (
                 .i_clk		        (clk),
-                .i_rstn		        (rst_n && (!reg_clear) && ~zero),
+                .i_rstn		        (rst_n && (!reg_clear)),
                 .i_a		        (act),                   //after zero detection
                 .i_b		        (wei_reg),                   //after zero detection
                 .i_c                (MAC_IN),                
