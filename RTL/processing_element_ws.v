@@ -62,7 +62,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
     assign  mul_mux_sel     = 1'b0;                                         //
     assign  pipeline_in     = pipeline_en && cell_en;                       //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                                         //cswitch use to change MAC local and MAC in
-    assign  wei_out         = pipe_wei[STAGE];                              //Push WEIGHT to next PE
+    assign  act_out         = pipe_act[STAGE];                              //Push WEIGHT to next PE
     assign  mac_is_valid    = pipe_valid[STAGE];                            //Mac is valid when finishing all STAGEs
     assign  zero            = ZERO_DETECTION    ?   Zero_detected : 1'b0;   //Zero signal on when having ZERO_DETECTION
     assign  wei_out         = wei_out_reg;                                  //Push ACTIVATION to nex PE
@@ -73,8 +73,8 @@ module processing_element_ws #(                         //Weight Sationary (Stor
         .WIDTH_B(WIDTH_B),
         .WIDTH_T(WIDTH_T)
     ) zd0 (
-        .A(act_reg),
-        .B(wei),
+        .A(act),
+        .B(wei_reg),
         .Thres(Thres),
         .Zero(Zero_detected)
     );
