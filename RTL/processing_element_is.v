@@ -47,9 +47,6 @@ module processing_element_is #(                         //Input Sationary (Store
 
     reg     [WIDTH_A-1:0]           act_reg, act_out_reg;                   //Act go to PE first
     wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;         
-    // wire    [WIDTH_A-1:0]           act_zd;
-    // wire    [WIDTH_B-1:0]           wei_zd;
-    // reg                             cell_reg;
     wire                            pipeline_in;
     wire                            Zero_detected;
     wire    [MUL_W-1:0]             mul_value;
@@ -67,8 +64,6 @@ module processing_element_is #(                         //Input Sationary (Store
     assign  pipeline_in     = pipeline_en && cell_en;                       //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                                         //
     assign  wei_out         = pipe_wei[STAGE];                                      //Push WEIGHT to next PE
-    // assign  act_zd          = zero  ? {WIDTH_A{1'b0}} : act_reg;
-    // assign  wei_zd          = zero  ? {WIDTH_B{1'b0}} : wei;
     assign  mac_is_valid    = pipe_valid[STAGE];
     assign  zero            = ZERO_DETECTION    ?   Zero_detected : 1'b0;
     assign  act_out         = act_out_reg;                                  //Push ACTIVATION to nex PE
@@ -145,23 +140,7 @@ module processing_element_is #(                         //Input Sationary (Store
         end
     endgenerate
 
-    // //Handle cell_enable for next PE
-    // always @(posedge clk or negedge rst_n) begin
-    //     if(!rst_n) begin
-    //         cell_reg        <= 1'b0;
-    //     end
-    //     else begin
-    //         if(reg_clear)
-    //             cell_reg    <= 1'b0;
-    //         else 
-    //             cell_reg    <= cell_sc_en;
-    //     end
-    // end
-
-    // assign  cell_out    = cell_reg && act_is_valid;
-
     //A0-cell-sc-en = 1;
-    //A1-
     //A0 - A1 - A2 - A3
     //cycle 1-2-3-4
     //Delay 1 cycle for waiting next value to next PE to avoid the same value transfer to next PE
