@@ -132,7 +132,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
                 .clk(clk),
                 .rst_n(rst_n),
                 .pipeline_en(pipeline_in && ~zero),
-                .A(pipe_act[STAGE),
+                .A(pipe_act[STAGE]),
                 .B(wei_reg),
                 .OUT(mul_value)
             );
