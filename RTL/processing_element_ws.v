@@ -12,8 +12,8 @@ module processing_element_ws #(                         //Weight Sationary (Stor
     parameter   MUL_TYPE            = 0,                //Choosing Multiplier
     parameter   ADD_TYPE            = 0,                //Choosing Adder
     parameter   STAGE               = 0,                //Number of Stage of pipeline
-    parameter   ARITHMETIC          = 0,
-    parameter   SIGNED              = 0,
+    parameter   ARITHMETIC          = 0,                //Choosing different Adder and Multiplier
+    parameter   SIGNED              = 0,                //Allow SIGNED Number
 
     parameter   INTERMEDIATE_PIPELINE_STAGE = 0
 
@@ -67,6 +67,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
     assign  zero            = ZERO_DETECTION    ?   Zero_detected : 1'b0;   //Zero signal on when having ZERO_DETECTION
     assign  wei_out         = wei_out_reg;                                  //Push ACTIVATION to nex PE
 
+    //Zero detection module
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
         .WIDTH_B(WIDTH_B),
@@ -141,7 +142,6 @@ module processing_element_ws #(                         //Weight Sationary (Stor
     // assign  cell_out    = cell_reg && act_is_valid;
 
     //A0-cell-sc-en = 1;
-    //A1-
     //A0 - A1 - A2 - A3
     //cycle 1-2-3-4
     //Delay 1 cycle for waiting next value to next PE to avoid the same value transfer to next PE
@@ -157,9 +157,10 @@ module processing_element_ws #(                         //Weight Sationary (Stor
         end
     end
 
+    //Delay cell_out 1 cycle for waiting next value of Array
     assign cell_out = cell_pipe[1] && wei_is_valid;
 
-    //Push MAC value out
+    //Buffer register to store value of MAC
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
            mac_buffer  <= {WIDTH_MAC{1'b0}};
@@ -169,11 +170,12 @@ module processing_element_ws #(                         //Weight Sationary (Stor
                 mac_buffer  <= {WIDTH_MAC{1'b0}};
             end
             else if(mac_is_valid) begin
-                mac_buffer  <= ARITHMETIC ? mac_out_fma : mac_out_adder;    //Using ARITHMETIC value to check value between fma and (mul with adder)    
+                mac_buffer  <= ARITHMETIC ? mac_out_fma : mac_out_adder;    //Using ARITHMETIC value to choose value between fma and (mul with adder)    
             end
         end
     end
 
+    //Push MAC value out
     assign  MAC_out = mac_buffer;
 
     //When finish all STAGE, pipe_valid is HIGH
@@ -202,13 +204,14 @@ module processing_element_ws #(                         //Weight Sationary (Stor
                 wei_reg         <= {WIDTH_B{1'b0}};
                 wei_is_valid    <= 1'b0;
             end
-            else if(cell_sc_en && ~wei_is_valid) begin                     //When cell_sc_en signal is high, act_reg stores value of act_in
+            else if(cell_sc_en && ~wei_is_valid) begin                     //When cell_sc_en signal is high and wei_reg do not have value, wei_reg stores value of wei_in
                 wei_reg         <= wei;
                 wei_is_valid    <= 1'b1;
             end
         end
     end
 
+    //Push value of Weight each cycle
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             wei_out_reg        <= {WIDTH_B{1'b0}};
@@ -239,7 +242,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
         else if(pipeline_in) begin
             pipe_mac[0] <= MAC_IN;
             pipe_act[0] <= act;
-            for(i = 1; i < STAGE + 1; i = i + 1) begin                  //Stimulate Pipeline Stage
+            for(i = 1; i < STAGE + 1; i = i + 1) begin                  //Stimulate Pipeline Stage for MAC and Activation value
                 pipe_mac[i]    <= pipe_mac[i-1];
                 pipe_act[i]    <= pipe_act[i-1];
             end
