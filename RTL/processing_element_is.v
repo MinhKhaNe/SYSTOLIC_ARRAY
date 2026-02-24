@@ -35,8 +35,7 @@ module processing_element_is #(                         //Input Sationary (Store
 
     output  wire                    cell_out,           //Cell_enable output for next PE
     output  wire                    c_switch_out,
-
-    output  wire    [WIDTH_B-1:0]   act_reg_out,               
+    
     output  wire    [WIDTH_A-1:0]   wei_out,            //weight out
     output  wire    [WIDTH_B-1:0]   act_out,            //do not flow out
     output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
@@ -67,7 +66,6 @@ module processing_element_is #(                         //Input Sationary (Store
     assign  mac_is_valid    = pipe_valid[STAGE];
     assign  zero            = ZERO_DETECTION    ?   Zero_detected : 1'b0;
     assign  act_out         = act_out_reg;                                  //Push ACTIVATION to nex PE
-    assign  act_reg_out     = act_reg;
 
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
