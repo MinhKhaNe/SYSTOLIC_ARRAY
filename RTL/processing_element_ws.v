@@ -178,16 +178,16 @@ module processing_element_ws #(                         //Weight Sationary (Stor
 
     //When finish all STAGE, pipe_valid is HIGH
     always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
+        if(!rst_n || reg_clear) begin
             pipe_valid  <= {(STAGE+1){1'b0}};
         end 
         else begin
-            if(reg_clear)
-                pipe_valid  <= {(STAGE+1){1'b0}};
-            else if (STAGE == 0)
-                pipe_valid  <= pipeline_in;
-            else if(pipeline_in)
-                pipe_valid  <= {pipe_valid[STAGE-1:0], pipeline_in};    //Shift bit to check
+            if (STAGE == 0)
+                pipe_valid  <= {(STAGE+1){pipeline_in}};
+            else begin
+                if(pipeline_in)
+                    pipe_valid  <= {pipe_valid[STAGE-1:0], pipeline_in};    //Shift bit to check
+            end
         end
     end
 
