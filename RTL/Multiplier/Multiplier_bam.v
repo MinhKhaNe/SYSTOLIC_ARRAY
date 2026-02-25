@@ -9,9 +9,9 @@ module Multiplier_bam #(
 	parameter HBL		= 0,		//Cut bit along Horizontal(y) axis
 	parameter STAGE		= 0	  	
 )(
-	input	wire			clk,
-	input	wire			rst_n,
-	input	wire			pip_en,
+	input	wire					clk,
+	input	wire					rst_n,
+	input	wire					pip_en,
 	input	wire	[WIDTH_A-1:0]	A,
 	input	wire	[WIDTH_B-1:0]	B,
 
@@ -113,5 +113,6 @@ module Multiplier_bam #(
 	assign OUT 	= pipe_reg[STAGE];
 
 endmodule
+
 
 
