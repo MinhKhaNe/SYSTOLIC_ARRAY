@@ -97,6 +97,6 @@ RTL code of Systolic Array in SAURIA Core and testbench to test each module
 - Is a network of processing elements that compute and pass data rhythmically through the system in a pipelined and synchronized manner, enabling high-throughput parallel computation.
 ### MAIN CHARACTERISTICS
 - Using many PEs (Processing Element) for calculating: each PE performs a simple MAC (Multiply–Accumulate) operand.
-- Data flow follows a pattern: moves between PEs following a defined position (left to right, above to below, diagonally).
+- Data flow follows a pattern: movements between PEs following a defined position (left to right, above to below, diagonally).
 - Local communication: PE only communicates with the next PE, do not need a large bus.
 - High Throughput: After pipeline is full, each clock will give 1 result.
