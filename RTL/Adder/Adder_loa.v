@@ -30,7 +30,7 @@ module Adder_loa #(
 	assign	b = {{{BITS-WIDTH_B}{B[WIDTH_B-1]}}, B};
 
 	generate
-		//If having IGNORE_BIT value
+		//If having LSB value
 		if(IGNORE_BIT > 0) begin
 			//LOW BITs of A and B
 			assign 	low_a 		= A[IGNORE_BIT - 1:0] ;
@@ -59,4 +59,5 @@ module Adder_loa #(
 	endgenerate
 
 endmodule
+
 
