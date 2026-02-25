@@ -14,9 +14,11 @@ module Multiplier_log #(
     input  wire                     pip_en,
     input  wire [WIDTH_A-1:0]       A,
     input  wire [WIDTH_B-1:0]       B,
+	
     output wire [WIDTH_MUL-1:0]     OUT
 );
 
+	//Calculating Log2 function (use to calculate width of LOG)
     function automatic integer clog2;
         input integer value;
         integer i;
@@ -27,13 +29,14 @@ module Multiplier_log #(
         end
     endfunction
 
-
+	//Derived Parameters
     parameter WIDTH_LOGA = 	clog2(WIDTH_A+1);       //Log's width of A
     parameter WIDTH_LOGB = 	clog2(WIDTH_B+1);       //Log's width of B
     parameter WIDTH_F    = 	`max(WIDTH_A, WIDTH_B);
     parameter LOG_W      = 	`max(WIDTH_A + WIDTH_LOGA + 1, WIDTH_B + WIDTH_LOGB + 1);   //Log width
     parameter X_W        = 	WIDTH_F-1;              //Mantissa width
 
+	//Internal Signals
 	wire 			[WIDTH_B-2:0] 		xb;         //Fractional of B
     wire 			[WIDTH_A-2:0] 		xa;         //Fractional of A
 	wire 	signed 	[WIDTH_A-1:0] 		A_s = A;
@@ -136,3 +139,4 @@ module Multiplier_log #(
     assign OUT = (prod_sign) ? -product : product;
 
 endmodule
+
