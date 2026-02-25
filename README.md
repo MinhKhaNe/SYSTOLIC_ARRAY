@@ -93,7 +93,8 @@ RTL code of Systolic Array in SAURIA Core and testbench to test each module
 - The final output is written out after all activations have been processed.
 
 ## 4. SYSTOLIC ARRAY
-### A systolic array is a network of processing elements that compute and pass data rhythmically through the system in a pipelined and synchronized manner, enabling high-throughput parallel computation.
+### A systolic array:
+- Is a network of processing elements that compute and pass data rhythmically through the system in a pipelined and synchronized manner, enabling high-throughput parallel computation.
 ### MAIN CHARACTERISTICS
 - Using many PEs (Processing Element) for calculating: each PE performs a simple MAC (Multiply–Accumulate) operand.
 - Data flow follows a pattern: moves between PEs following a defined position (left to right, above to below, diagonally).
