@@ -1,28 +1,28 @@
-module processing_element_ws #(                         //Weight Sationary (Store Weight, transfer Activation and MAC)
+module processing_element_ws #(                         //Input Sationary (Store Activation, transfer Weight and MAC)
     parameter   WIDTH_A             = 16,               //Width of A
     parameter   WIDTH_B             = 16,               //Width of B
     parameter   WIDTH_MAC           = 48,               //Width of MAC
     parameter   WIDTH_T             = 2,                //Width of threshold
-    parameter   ZERO_GATING_MULT    = 1,                //
-    parameter   ZERO_GATING_ADD     = 1,                //
-    parameter   MM_APPROX           = 1,                //
-    parameter   M_APPROX            = 1,                //
-    parameter   AA_APPROX           = 1,                //
-    parameter   A_APPROX            = 1,                //
+    parameter   ZERO_GATING_MULT    = 1,                //Skip multiplier if zero
+    parameter   ZERO_GATING_ADD     = 1,                //Skip adder if zero
+    parameter   MM_APPROX           = 1,                //LSB bits of multiplier if having approximation
+    parameter   M_APPROX            = 1,                //MSB bits of multiplier if having approximation
+    parameter   AA_APPROX           = 1,                //LSB bits of adder if having approximation
+    parameter   A_APPROX            = 1,                //MSB bits of adder if having approximation
     parameter   MUL_TYPE            = 0,                //Choosing Multiplier
     parameter   ADD_TYPE            = 0,                //Choosing Adder
     parameter   STAGE               = 0,                //Number of Stage of pipeline
-    parameter   ARITHMETIC          = 0,                //Choosing different Adder and Multiplier
-    parameter   SIGNED              = 0,                //Allow SIGNED Number
+    parameter   ARITHMETIC          = 0,                //Choosing result between FMA or (multiplier and adder)
+    parameter   SIGNED              = 0,                
 
     parameter   INTERMEDIATE_PIPELINE_STAGE = 0
 
 )(
     input   wire                    clk,
     input   wire                    rst_n,
-    input   wire    [WIDTH_A-1:0]   act,                //activation 
-    input   wire    [WIDTH_B-1:0]   wei,                //weight
-    input   wire    [WIDTH_MAC-1:0] MAC_IN,             //transport value to next PE to push out
+    input   wire    [WIDTH_A-1:0]   act,                //activation input
+    input   wire    [WIDTH_B-1:0]   wei,                //weight input
+    input   wire    [WIDTH_MAC-1:0] MAC_IN,             //MAC input
 
     input   wire                    pipeline_en,        //stimulate pipeline
     input   wire                    reg_clear,          //Clear Registers
@@ -35,7 +35,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
 
     output  wire                    cell_out,           //Cell_enable output for next PE
     output  wire                    c_switch_out,
-
+    
     output  wire    [WIDTH_A-1:0]   wei_out,            //weight out
     output  wire    [WIDTH_B-1:0]   act_out,            //do not flow out
     output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
@@ -59,7 +59,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
     integer                         i;
     reg                             wei_is_valid;
 
-    assign  mul_mux_sel     = 1'b0;                                         //
+    assign  mul_mux_sel     = 1'b0;                                        
     assign  pipeline_in     = pipeline_en && cell_en;                       //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                                         //cswitch use to change MAC local and MAC in
     assign  act_out         = pipe_act[STAGE];                              //Push WEIGHT to next PE
@@ -138,8 +138,6 @@ module processing_element_ws #(                         //Weight Sationary (Stor
             );
         end
     endgenerate
-
-    // assign  cell_out    = cell_reg && act_is_valid;
 
     //A0-cell-sc-en = 1;
     //A0 - A1 - A2 - A3
