@@ -121,7 +121,7 @@ module processing_element_is #(                         //Input Sationary (Store
             ) a0 (
                 .A(pipe_mac[STAGE]),
                 .B(mul_value),
-                .Carry(0),
+                .Carry(1'b0),
                 .OUT(mac_out_adder)
             );
 
