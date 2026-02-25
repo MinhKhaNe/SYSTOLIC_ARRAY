@@ -3,31 +3,31 @@ module processing_element_os #(                         //Output Sationary (Stor
     parameter   WIDTH_B             = 16,               //Width of B
     parameter   WIDTH_MAC           = 48,               //Width of MAC
     parameter   WIDTH_T             = 2,                //Width of threshold
-    parameter   ZERO_GATING_MULT    = 1,                //
-    parameter   ZERO_GATING_ADD     = 1,                //
-    parameter   MM_APPROX           = 1,                //
-    parameter   M_APPROX            = 1,                //
-    parameter   AA_APPROX           = 1,                //
-    parameter   A_APPROX            = 1,                //
+    parameter   ZERO_GATING_MULT    = 1,                //Skip multiplier if zero
+    parameter   ZERO_GATING_ADD     = 1,                //Skip adder if zero
+    parameter   MM_APPROX           = 1,                //LSB bits of multiplier if having approximation
+    parameter   M_APPROX            = 1,                //MSB bits of multiplier if having approximation
+    parameter   AA_APPROX           = 1,                //LSB bits of adder if having approximation
+    parameter   A_APPROX            = 1,                //MSB bits of adder if having approximation
     parameter   MUL_TYPE            = 0,                //Choosing Multiplier
     parameter   ADD_TYPE            = 0,                //Choosing Adder
     parameter   STAGE               = 0,                //Number of Stage of pipeline
-    parameter   ARITHMETIC          = 0,
-    parameter   SIGNED              = 0,
+    parameter   ARITHMETIC          = 0,                //Choosing result between FMA or (multiplier and adder)
+    parameter   SIGNED              = 0,                
 
     parameter   INTERMEDIATE_PIPELINE_STAGE = 0
 
 )(
     input   wire                    clk,
     input   wire                    rst_n,
-    input   wire    [WIDTH_A-1:0]   act,                //activation 
-    input   wire    [WIDTH_B-1:0]   wei,                //weight
-    input   wire    [WIDTH_MAC-1:0] MAC_IN,             //transport value to next PE to push out
+    input   wire    [WIDTH_A-1:0]   act,                //activation input
+    input   wire    [WIDTH_B-1:0]   wei,                //weight input
+    input   wire    [WIDTH_MAC-1:0] MAC_IN,             //MAC input
 
     input   wire                    pipeline_en,        //stimulate pipeline
     input   wire                    reg_clear,          //Clear Registers
     input   wire                    cell_en,            //Enable signal allows PE working
-    input   wire                    cell_sc_en,         //Enable signal for next PE
+    input   wire                    cell_sc_en,         //Enable signal for next PE to take Activation  
     input   wire                    c_switch,           //Switch value between internal Accumulate and input Accumulate (Off because Output Stationary)
     input   wire                    cscan_en,           //enable push MAC to output
 
@@ -35,18 +35,17 @@ module processing_element_os #(                         //Output Sationary (Stor
 
     output  wire                    cell_out,           //Cell_enable output for next PE
     output  wire                    c_switch_out,
-
-    output  wire    [WIDTH_A-1:0]   wei_out,            //Weight out
-    output  wire    [WIDTH_B-1:0]   act_out,            //Activation Out
-    output  wire    [WIDTH_MAC-1:0] MAC_out            //do not flow out
+    
+    output  wire    [WIDTH_A-1:0]   wei_out,            //weight out
+    output  wire    [WIDTH_B-1:0]   act_out,            //do not flow out
+    output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
 );
 
     parameter   ZERO_DETECTION  = ZERO_GATING_ADD | ZERO_GATING_MULT;
     parameter   MUL_W           = (ARITHMETIC==0)   ?   (WIDTH_A+WIDTH_B) : WIDTH_MAC;
 
     reg     [WIDTH_MAC-1:0]         mac_reg;            //Always choosing local mac instead of Out MAC because of OS
-    wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;       
-    // reg     [WIDTH_MAC-1:0]         pipe_mac [0:STAGE];    
+    wire    [WIDTH_MAC-1:0]         mac_out_fma, mac_value, mac_out_adder;          
     wire    [WIDTH_A-1:0]           act_zd;
     wire    [WIDTH_B-1:0]           wei_zd;
     reg     [WIDTH_A-1:0]           act_reg;
@@ -64,7 +63,6 @@ module processing_element_os #(                         //Output Sationary (Stor
     integer                         i;
 
     assign  mul_mux_sel     = 1'b0;                             //OUTPUT STATIONARY
-    // assign  mac_value       = pipe_mac[STAGE];               //Final MAC value after pipeline
     assign  mac_value       = mac_reg;                          //Final MAC value after pipeline
     assign  pipeline_in     = pipeline_en && cell_en;           //Internal pipeline signal
     assign  c_switch_out    = 1'b0;                             //OS so do not need to switch MAC
@@ -237,19 +235,5 @@ module processing_element_os #(                         //Output Sationary (Stor
             end
         end
     end
-
-    // always @(posedge clk or negedge rst_n) begin
-    //     if(!rst_n) begin
-    //         for(i = 0; i < STAGE + 1; i = i + 1) begin
-    //             pipe_mac[i]    <= {WIDTH_MAC{1'b0}};
-    //         end
-    //     end
-    //     else if(pipeline_in && !zero_chk) begin
-    //         pipe_mac[0] <= mac_reg;
-    //         for(i = 1; i < STAGE + 1; i = i + 1) begin                  //Stimulate Pipeline Stage
-    //             pipe_mac[i]    <= pipe_mac[i-1];
-    //         end
-    //     end
-    // end
 
 endmodule
