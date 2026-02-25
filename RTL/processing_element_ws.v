@@ -1,4 +1,4 @@
-module processing_element_ws #(                         //Input Sationary (Store Activation, transfer Weight and MAC)
+module processing_element_ws #(                         //Weight Sationary (Store Weight, transfer Activation and MAC)
     parameter   WIDTH_A             = 16,               //Width of A
     parameter   WIDTH_B             = 16,               //Width of B
     parameter   WIDTH_MAC           = 48,               //Width of MAC
