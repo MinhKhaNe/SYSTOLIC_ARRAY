@@ -14,11 +14,11 @@ module Multiplier_ideal #(
 	output	wire	[WIDTH_MUL-1:0]	OUT
 );
 
+	//Internal signals
 	wire	signed	[WIDTH_A-1:0]			A_sign;
 	wire	signed	[WIDTH_B-1:0]			B_sign;
-
-	reg		[WIDTH_MUL-1:0]	Buffer [0:STAGE];
-	reg	signed	[WIDTH_MUL-1:0]			OUT_sign;
+	reg				[WIDTH_MUL-1:0]			Buffer [0:STAGE];
+	reg		signed	[WIDTH_MUL-1:0]			OUT_sign;
 
 	always @(*) begin
 		if(SIGNED)
@@ -43,4 +43,5 @@ module Multiplier_ideal #(
 	endgenerate
 
 	assign OUT = Buffer[STAGE];
+
 endmodule
