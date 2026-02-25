@@ -1,5 +1,5 @@
 module Multiplier_2x2 #(
-	parameter	APPROX = 0
+	parameter	APPROX = 0			//Number of approximate bit
 )(
 	input	wire	[1:0]	A,
 	input	wire	[1:0]	B,
@@ -43,3 +43,4 @@ module Multiplier_2x2 #(
 	end
 
 endmodule
+
