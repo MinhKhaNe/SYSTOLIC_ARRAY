@@ -32,12 +32,11 @@ module tb_multiplier_2x2;
 
                 GOLD = i * j;
 
-                $display("%2d %2d |  %2d  |   %2d  |   %2d",
-                         i, j, GOLD, OUT_exact, OUT_approx);
+                $display("%2d %2d |  %2d  |   %2d  |   %2d", i, j, GOLD, OUT_exact, OUT_approx);
 
                 if (OUT_exact !== GOLD) begin
                   	$display("FAIL!!");
-                    	$stop;
+                    $stop;
                 end
             end
         end
@@ -47,4 +46,5 @@ module tb_multiplier_2x2;
     end
 
 endmodule
+
 
