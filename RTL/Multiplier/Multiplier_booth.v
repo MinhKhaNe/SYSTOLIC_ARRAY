@@ -18,9 +18,11 @@ module Multiplier_booth #(
 	output	wire	[WIDTH_MUL-1:0]	OUT
 );
 
+	//Derived Parameters
 	parameter WIDTH = `max(WIDTH_A, WIDTH_B);	
 	parameter cnt	= (WIDTH + 1)/2;			//Radix-4 only need n/2
 
+	//Internal Signals
 	wire			[2:0]				Q;
 	wire	signed	[WIDTH_MUL-1:0]		A_ext;
 	wire			[WIDTH_B+2:0]		B_ext;
@@ -74,6 +76,7 @@ module Multiplier_booth #(
 		end
 	end
 
+	//Stimulate pipeline stage
 	always @(posedge clk or negedge rst_n) begin
 		if (!rst_n) begin
        		for(p = 0; p <= STAGE; p = p + 1) begin
@@ -95,3 +98,4 @@ module Multiplier_booth #(
 
 	assign OUT = pipe_reg[STAGE];						//OUT result when finish all pipeline stages
 endmodule
+
