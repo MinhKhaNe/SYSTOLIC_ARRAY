@@ -1,4 +1,4 @@
-module systolic_array(
+module systolic_array #(
     parameter   WIDTH_A                     = 16,               //Width of A
     parameter   WIDTH_B                     = 16,               //Width of B
     parameter   WIDTH_MAC                   = 48,               //Width of MAC
@@ -139,8 +139,8 @@ module systolic_array(
                         .MAC_IN(mac_in[i][j+1]),
                         .pipeline_en(pipeline_en),
                         .reg_clear(reg_clear),
-                        .cell_en(cell_en_in[i][j]),
-                        .cell_sc_en(cell_sc_en),
+                        .cell_en(1'b1),
+                        .cell_sc_en((i == 0) ? cell_sc_en : cell_en_in[i][j]),
                         .c_switch(c_switch),
                         .cscan_en(cscan_en),
                         .Thres(Thres),
@@ -181,8 +181,8 @@ module systolic_array(
                         .MAC_IN(mac_in[i][j+1]),
                         .pipeline_en(pipeline_en),
                         .reg_clear(reg_clear),
-                        .cell_en(cell_en_in[i][j]),
-                        .cell_sc_en(cell_sc_en),
+                        .cell_en(1'b1),
+                        .cell_sc_en((i == 0) ? cell_sc_en : cell_en_in[i][j]),
                         .c_switch(c_switch),
                         .cscan_en(cscan_en),
                         .Thres(Thres),
