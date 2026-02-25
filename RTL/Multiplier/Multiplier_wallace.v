@@ -38,7 +38,8 @@ module Multiplier_wallace #(
 						(b_sign)	? 	(0-B) :		//Signed mode -> Take 2's complement
 						B;
 
-	assign	a_wall	=	{1'b0, a_abs[WIDTH_A-2:0]};	//MSB forced = 0 to avoid sign-extension
+	//MSB forced = 0 to avoid sign-extension
+	assign	a_wall	=	{1'b0, a_abs[WIDTH_A-2:0]};	
 	assign	b_wall	=	{1'b0, b_abs[WIDTH_B-2:0]};
 
 	//Wallace Tree Multiplier
@@ -62,7 +63,8 @@ module Multiplier_wallace #(
 				product_out	<= product;
 		end
 	end
- 
+
+	//Stimulate pipeline stage
 	always @(posedge clk or negedge rst_n) begin
 		if (!rst_n) begin
        		for(p = 0; p <= STAGE; p = p + 1) begin
