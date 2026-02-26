@@ -37,13 +37,14 @@ module systolic_array #(
     output  wire                    cell_out,                   //Cell_enable output for next PE
     output  wire                    c_switch_out,
     
-    output  wire    [WIDTH_MAC-1:0] MAC_out [0:y_axis-1]        //MAC out
+    output  wire    [WIDTH_MAC-1:0] MAC_out [0:y_axis-1][0:x_axis-1]        //MAC out
 );
 
     wire    [WIDTH_A-1:0]       act_in[0:y_axis-1][0:x_axis];
     wire    [WIDTH_B-1:0]       wei_in[0:y_axis][0:x_axis-1];    
     wire    [WIDTH_MAC-1:0]     mac_in[0:y_axis-1][0:x_axis];
     wire                        cell_en_in[0:y_axis][0:x_axis-1];
+    wire                        cell_sc_en_in[0:y_axis][0:x_axis-1];
     wire                        c_switch_out_wire[0:y_axis-1][0:x_axis-1];
 
     assign  cell_out        =   cell_en_in[y_axis][x_axis-1];
@@ -54,6 +55,7 @@ module systolic_array #(
         for(x = 0; x < x_axis; x = x + 1) begin
             assign  wei_in[0][x]        = wei[x];
             assign  cell_en_in[0][x]    = cell_en;
+            assign  cell_sc_en_in[0][x]    = cell_sc_en;
         end
     endgenerate
 
@@ -62,8 +64,15 @@ module systolic_array #(
         for(y = 0; y < y_axis; y = y + 1) begin
             assign  act_in[y][0]        =   act[y];
             assign  mac_in[y][x_axis]   =   MAC_IN[y];
+        end
+    endgenerate
 
-            assign  MAC_out[y]          =   mac_in[y][0];
+    genvar ox,oy;
+    generate
+        for(oy = 0; oy < y_axis; oy = oy + 1) begin
+            for(ox = 0; ox < x_axis; ox = ox + 1) begin
+                assign  MAC_out[oy][ox]          =   mac_in[oy][ox];
+            end
         end
     endgenerate
 
@@ -94,11 +103,11 @@ module systolic_array #(
                         .rst_n(rst_n),
                         .act(act_in[i][j]),
                         .wei(wei_in[i][j]),
-                        .MAC_IN(mac_in[i][j+1]),
+                        .MAC_IN({WIDTH_MAC{1'b0}}),
                         .pipeline_en(pipeline_en),
                         .reg_clear(reg_clear),
                         .cell_en(cell_en_in[i][j]),
-                        .cell_sc_en(cell_sc_en),
+                        .cell_sc_en(cell_sc_en_in[i][j]),
                         .c_switch(c_switch),
                         .cscan_en(cscan_en),
                         .Thres(Thres),
