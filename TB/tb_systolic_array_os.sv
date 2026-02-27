@@ -104,25 +104,25 @@ module tb_systolic_array_os;
         foreach(wei[i]) wei[i] = 0;
         foreach(MAC_in[i]) MAC_in[i] = 0;
         
-        $monitor("\nValue of 1st PE is: %d, \nValue of 2nd PE is %d, \nValue of 3rd PE is %d, \nValue of 4st PE is %d,
-                  \nValue of 1st wei is: %d, \nValue of 2nd wei is %d, \nValue of 3rd wei is %d
-                  \nValue of 1st act is: %d, \nValue of 2nd act is %d, \nValue of 3rd act is %d", MAC_out[0][0], MAC_out[0][1], MAC_out[1][0], MAC_out[1][1], wei[0], wei[1], wei[2], act[0], act[1], act[2]);
+        // $monitor("\nValue of 1st PE is: %d, \nValue of 2nd PE is %d, \nValue of 3rd PE is %d, \nValue of 4th PE is %d, \nValue of 5th PE is: %d, \nValue of 6th PE is %d, \nValue of 7th PE is %d, \nValue of 8th PE is %d, \nValue of 9th PE is %d", 
+        //         MAC_out[0][0], MAC_out[0][1], MAC_out[0][2], MAC_out[1][0], MAC_out[1][1], MAC_out[1][2], MAC_out[2][0], MAC_out[2][1], MAC_out[2][2]);
 
-        $display("\n===== Case 1: Reset Check =====");
+        $monitor("\n [%d] [%d] [%d] \n [%d] [%d] [%d] \n [%d] [%d] [%d]", 
+                MAC_out[0][0], MAC_out[0][1], MAC_out[0][2], 
+                MAC_out[1][0], MAC_out[1][1], MAC_out[1][2], 
+                MAC_out[2][0], MAC_out[2][1], MAC_out[2][2]);
+
+        $display("\n===== Case 1: Reset Chk =====");
         rst_n = 0; pipeline_en = 1; reg_clear = 0; cell_en = 1; cell_sc_en = 1; c_switch = 1; cscan_en = 0; Thres = 0;
 
         @(posedge clk);
         #1;
-        //First row of WEIGHT
         wei[0] = 16'h5; wei[1] = 16'h7; wei[2] = 16'h0;
-        //First column of ACTIVATION
         act[0] = 16'h1; act[1] = 16'h2; act[2] = 16'h0;
 
         @(posedge clk);
         #1;
-        //Second row of WEIGHT
         wei[0] = 16'h6; wei[1] = 16'h8; wei[2]  = 16'h0;
-        //Second column of ACTIVATION
         act[0] = 16'h3; act[1] = 16'h4; act[2] = 16'h0;
 
         @(posedge clk);
@@ -131,7 +131,7 @@ module tb_systolic_array_os;
 
         @(posedge clk);
         #1;
-        $display("\n===== Case 2: Reset Off =====");
+        $display("\n===== Case 2: Reset Off Chk =====");
         rst_n = 1; cell_sc_en = 1;
 
         @(posedge clk); #1;
@@ -146,36 +146,221 @@ module tb_systolic_array_os;
         act[0] = 16'd0; act[1] = 16'd4; 
         wei[0] = 16'd0; wei[1] = 16'd8;
 
-        //Reset Data
+        //Reset Data IN
         @(posedge clk);
         foreach(act[i]) act[i]=0;
         foreach(wei[i]) wei[i]=0;
+
+        repeat(20) @(posedge clk);
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Case 3: Check Reg_Clear Signal Chk =====");
         
         reg_clear = 1;
 
         @(posedge clk);
         reg_clear = 0;
 
-        repeat(20) @(posedge clk);
+        //[6 2]     [7 9]
+        //[8 4]     [3 5]
+        @(posedge clk); #1;
+        act[0] = 16'd2; act[1] = 16'd0; act[2] = 16'd0;
+        wei[0] = 16'd3; wei[1] = 16'd0; wei[2] = 16'd0;
 
         @(posedge clk); #1;
-        act[0] = 16'd2; act[1] = 16'd0; 
-        wei[0] = 16'd3; wei[1] = 16'd0;
+        act[0] = 16'd6; act[1] = 16'd4; act[2] = 16'd0;
+        wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd0;
 
         @(posedge clk); #1;
-        act[0] = 16'd6; act[1] = 16'd4; 
-        wei[0] = 16'd7; wei[1] = 16'd5;
+        act[0] = 16'd0; act[1] = 16'd8; act[2] = 16'd0;
+        wei[0] = 16'd0; wei[1] = 16'd9; wei[2] = 16'd0;
 
-        @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd8; 
-        wei[0] = 16'd0; wei[1] = 16'd9;
-
-        //Reset Data
+        //Reset Data IN
         @(posedge clk);
         foreach(act[i]) act[i]=0;
         foreach(wei[i]) wei[i]=0;
 
         repeat(20) @(posedge clk);
+
+        @(posedge clk);
+        reg_clear = 1;
+
+        @(posedge clk);
+        reg_clear = 0;
+
+        //[2 4]     [3 5]
+        //[6 8]     [7 9]
+        @(posedge clk); #1;
+        act[0] = 16'd4; act[1] = 16'd0; act[2] = 16'd0;
+        wei[0] = 16'd7; wei[1] = 16'd0; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd2; act[1] = 16'd8; act[2] = 16'd0;
+        wei[0] = 16'd3; wei[1] = 16'd9; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd0;
+        wei[0] = 16'd0; wei[1] = 16'd5; wei[2] = 16'd0;
+
+        //Reset Data IN
+        @(posedge clk);
+        foreach(act[i]) act[i]=0;
+        foreach(wei[i]) wei[i]=0;
+
+        repeat(20) @(posedge clk);
+
+        @(posedge clk);
+        reg_clear = 1;
+
+        @(posedge clk);
+        reg_clear = 0;
+        
+        //[3 2 1]     [7 4 1]
+        //[6 5 4]     [8 5 2] 
+        //[9 8 7]     [9 6 3]
+        @(posedge clk); #1;
+        act[0] = 16'd1; act[1] = 16'd0; act[2] = 16'd0;
+        wei[0] = 16'd9; wei[1] = 16'd0; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd2; act[1] = 16'd4; act[2] = 16'd0;
+        wei[0] = 16'd8; wei[1] = 16'd6; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd3; act[1] = 16'd5; act[2] = 16'd7;
+        wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd3;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd8;
+        wei[0] = 16'd0; wei[1] = 16'd4; wei[2] = 16'd2;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd0; act[2] = 16'd9;
+        wei[0] = 16'd0; wei[1] = 16'd0; wei[2] = 16'd1;
+
+        //Reset Data IN
+        @(posedge clk);
+        foreach(act[i]) act[i]=0;
+        foreach(wei[i]) wei[i]=0;
+
+        repeat(10) @(posedge clk);
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Case 4: Pipeline_en Signal Chk =====");
+        
+        reg_clear = 1;
+
+        @(posedge clk);
+        #1;
+        reg_clear = 0;
+
+        //[3 2 1]     [7 4 1]
+        //[6 5 4]     [8 5 2] 
+        //[9 8 7]     [9 6 3]
+        @(posedge clk); #1;
+        act[0] = 16'd1; act[1] = 16'd0; act[2] = 16'd0;
+        wei[0] = 16'd9; wei[1] = 16'd0; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd2; act[1] = 16'd4; act[2] = 16'd0;
+        wei[0] = 16'd8; wei[1] = 16'd6; wei[2] = 16'd0;
+
+        @(posedge clk); #1;
+        act[0] = 16'd3; act[1] = 16'd5; act[2] = 16'd7;
+        wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd3;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd8;
+        wei[0] = 16'd0; wei[1] = 16'd4; wei[2] = 16'd2;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd0; act[2] = 16'd9;
+        wei[0] = 16'd0; wei[1] = 16'd0; wei[2] = 16'd1;
+
+        //Reset Data IN
+        @(posedge clk);
+        foreach(act[i]) act[i]=0;
+        foreach(wei[i]) wei[i]=0;
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Pipeline OFF =====");
+        pipeline_en = 0;
+        repeat(10) begin
+            @(posedge clk);
+            #1;
+            $display("\n [%d] [%d] [%d] \n [%d] [%d] [%d] \n [%d] [%d] [%d]", 
+                MAC_out[0][0], MAC_out[0][1], MAC_out[0][2], 
+                MAC_out[1][0], MAC_out[1][1], MAC_out[1][2], 
+                MAC_out[2][0], MAC_out[2][1], MAC_out[2][2]);
+        end
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Pipeline ON =====");
+        pipeline_en = 1;
+
+        repeat(10) @(posedge clk);
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Case 5: Cell_en Signal Chk =====");
+        
+        reg_clear = 1;
+
+        @(posedge clk);
+        #1;
+        reg_clear = 0;
+
+        //[1 4 7]     [1 2 3]
+        //[2 5 8]     [4 5 6] 
+        //[3 6 9]     [7 8 9]
+        @(posedge clk); #1;
+        act[0] = 16'd7; act[1] = 16'd0; act[2] = 16'd0;     //Most Right of First Row of the 1st Matrix Start: 7
+        wei[0] = 16'd7; wei[1] = 16'd0; wei[2] = 16'd0;     //Most Left of Last Column of the 2nd Matrix Start: 7
+
+        @(posedge clk); #1;
+        act[0] = 16'd4; act[1] = 16'd8; act[2] = 16'd0;     //Most Right of Second Row of the 1st Matrix Start: 8
+        wei[0] = 16'd4; wei[1] = 16'd8; wei[2] = 16'd0;     //Most Left of 2nd Column of the 2nd Matrix Start: 8
+
+        @(posedge clk); #1;
+        act[0] = 16'd1; act[1] = 16'd5; act[2] = 16'd9;     //Most Right of Last Row of the 1st Matrix Start: 9
+        wei[0] = 16'd1; wei[1] = 16'd5; wei[2] = 16'd9;     //Most Left of 1st Column of the 2nd Matrix Start: 9
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd2; act[2] = 16'd6;
+        wei[0] = 16'd0; wei[1] = 16'd2; wei[2] = 16'd6;
+
+        @(posedge clk); #1;
+        act[0] = 16'd0; act[1] = 16'd0; act[2] = 16'd3;
+        wei[0] = 16'd0; wei[1] = 16'd0; wei[2] = 16'd3;
+
+        //Reset Data IN
+        @(posedge clk);
+        foreach(act[i]) act[i]=0;
+        foreach(wei[i]) wei[i]=0;
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Cell_en OFF =====");
+        cell_en = 0;
+        repeat(10) begin
+            @(posedge clk);
+            #1;
+            $display("\n [%d] [%d] [%d] \n [%d] [%d] [%d] \n [%d] [%d] [%d]", 
+                MAC_out[0][0], MAC_out[0][1], MAC_out[0][2], 
+                MAC_out[1][0], MAC_out[1][1], MAC_out[1][2], 
+                MAC_out[2][0], MAC_out[2][1], MAC_out[2][2]);
+        end
+
+        @(posedge clk);
+        #1;
+        $display("\n===== Cell_en ON =====");
+        cell_en = 1;
+
+        repeat(10) @(posedge clk);
 
         $finish;
 
