@@ -11,7 +11,7 @@ RTL code of Systolic Array in SAURIA Core and testbench to test each module
       -Gear Adder version used for signed two’s complement numbers.
 ###   c. Adder Ideal:
       -Ideal adder, using standard Adding Operands (+) to compare.
-###   d. Adder Loa (Lower Part OR Adder):
+###   d. Adder Loa (Low Accuracy Adder):
       -Adder is split into low and high bit.
       -Only using Add function for high bit, using OR function for low bit.
 ###   e. Adder Trua (Truncated Adder):
