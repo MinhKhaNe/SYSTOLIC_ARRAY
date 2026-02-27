@@ -6,7 +6,7 @@ RTL code of Systolic Array in SAURIA Core and testbench to test each module
       -Divide into many Sub-Adder then add them together to create the Result.
       -Low blocks: no carry propagation.
       -High blocks: exact addition.
-      -The partial results are combined to create final sum.
+      -The partial results are combined to create the final sum.
 ###   b. Adder Gear 2c:
       -Gear Adder version used for signed two’s complement numbers.
 ###   c. Adder Ideal:
