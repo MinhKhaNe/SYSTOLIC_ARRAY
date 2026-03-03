@@ -26,6 +26,10 @@ module Adder_gear #(
 	wire	signed	[L-1:0]			subadd_A [k-1:0]; 
 	wire	signed	[L-1:0]			subadd_B [k-1:0]; 
 	wire	signed	[N:0]			subadd_sum [k-1:0];
+	wire 			[k:0] 			carry;
+
+	//Sub Adder local carry
+	assign 	carry[0] = 1'b0;
 
 	//Sign extend
 	assign	a = {{{BITS-WIDTH_A}{A[WIDTH_A-1]}}, A};	
@@ -40,7 +44,9 @@ module Adder_gear #(
 			assign subadd_B[i] = b[i*R+:L];
 
 			//Sum the sub-adders
-			assign subadd_sum[i] = subadd_A[i] + subadd_B[i];
+			assign subadd_sum[i] = subadd_A[i] + subadd_B[i] + carry[i];
+			//Create carry for next block
+			assign carry[i+1] 		= subadd_sum[i][L];
 
 			//First block
 			if(i==0) begin
@@ -56,4 +62,5 @@ module Adder_gear #(
 
 	assign OUT = Sum;
 endmodule
+
 
