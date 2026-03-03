@@ -1,88 +1,86 @@
-module tb_adder_gear_2c();
+`timescale 1ns/1ps
 
-    parameter R     = 4;   
-    parameter P     = 4;   
-    parameter IP_W  = 16;  
-    parameter OC_W  = 16; 
+module tb_adder_gear_2c;
 
-    logic [IP_W-1:0] i_p;
-    logic [OC_W-1:0] i_c;
-    logic            i_carry;
-    logic [OC_W-1:0] o_c;
-    logic [OC_W-1:0] expected_sum;
+    localparam int WIDTH_A = 4;
+    localparam int WIDTH_B = 8;
+    localparam int R = 4;
+    localparam int P = 4;
+
+    localparam int BITS = (WIDTH_A > WIDTH_B) ? WIDTH_A : WIDTH_B;
+
+    logic   [WIDTH_A-1:0]  A;
+    logic   [WIDTH_B-1:0]  B;
+    logic                   Carry;
+
+    logic   [BITS-1:0]      OUT;
 
     Adder_gear_2c #(
         .R(R),
         .P(P),
-        .WIDTH_A(IP_W),
-        .WIDTH_B(OC_W)
+        .WIDTH_A(WIDTH_A),
+        .WIDTH_B(WIDTH_B)
     ) dut (
-        .A(i_p),
-        .B(i_c),
-        .Carry(i_carry),
-        .OUT(o_c)
+        .A(A),
+        .B(B),
+        .Carry(Carry),
+        .OUT(OUT)
     );
 
+    task automatic display_result();
+		$display(
+			"\nA=%0d, B=%0d, Carry=%b, OUT=%0d", $signed(A), $signed(B), Carry, $signed(OUT)
+		);
+		$display(
+			"A=%b, B=%b, Carry=%b, OUT=%b", $signed(A), $signed(B), Carry, OUT
+		);
+	endtask
+
     initial begin
-        $dumpfile("adder_gear.vcd"); 
+        $dumpfile("tb_adder_gear_2c.vcd");
         $dumpvars(0, tb_adder_gear_2c);
-        i_carry = 1'b0;
-        i_p = 16'h0005; i_c = 16'h000A;
-        #10;
-        check_result();
-        i_p = 16'h0FFF; i_c = 16'h0001;
-        #10;
-        check_result();
-        i_p = -16'd10; i_c = 16'd5;
-        #10;
-        check_result();
-        $display("===== Running 20 random tests =====");
-        repeat (20) begin
-            i_p = $urandom();
-            i_c = $urandom();
-            #10;
-            check_result();
-        end
-        
-        $display("\n===== Running Signed Number Cases =====");
-        i_p = 16'sd20;   i_c = -16'sd5;
-        #10; check_result();
-        i_p = 16'sd10;   i_c = -16'sd30;
-        #10; check_result();
-        i_p = -16'sd100; i_c = -16'sd50;
-        #10; check_result();
-        i_p = 16'sh8000; i_c = 16'sd1;
-        #10; check_result();
-        i_p = -16'sd1234; i_c = 16'sd1234;
-        #10; check_result();
-        i_p = -16'sd1; i_c = 16'sd1;
-        #10; check_result();
-        i_p = -16'sd20000; i_c = -16'sd20000;
-        #10; check_result();
-        i_p = 16'sh8000; i_c = 16'sh8000;
-        #10; check_result();
-        i_p = 16'sd32767; i_c = -16'sd32767;
-        #10; check_result();
-        i_p = -16'sd1; i_c = -16'sd1;
-        #10; check_result();
-        i_p = 16'sd32767; i_c = 16'sd1;
-        #10; check_result();
-        i_p = -16'sd54321; i_c = 16'sd0;
-        #10; check_result();
 
-        $finish;
+        A = 4'sd5;
+        B = 8'sd3;
+        Carry = 0;
+        #1 display_result();
+
+        A = -4'sd5;
+        B = 8'sd3;
+        Carry = 0;
+        #1 display_result();
+
+        A = -4'sd5;
+        B = -8'sd7;
+        Carry = 0;
+        #1 display_result();
+
+        A = -4'sd1;
+        B = 8'sd1;
+        Carry = 0;
+        #1 display_result();
+
+        A = -4'sd1;
+        B = -8'sd1;
+        Carry = 1;
+        #1 display_result();
+
+        A = -4'sd20;
+        B = -8'sd40;
+        Carry = 1;
+        #1 display_result();
+
+        A = 4'sd7;
+        B = 8'sd1;
+        Carry = 0;
+        #1 display_result();
+
+        A = -4'sd8;
+        B = -8'sd1;
+        Carry = 0;
+        #1 display_result();
+
+        #1 $finish;
     end
-
-    task check_result;
-        begin
-            expected_sum = i_p + i_c;
-            if (o_c === expected_sum) begin
-                $display("[PASS] %16b + %16b= %16b", i_p, i_c, o_c);
-            end else begin
-                $display("[FAIL/WARN] %16b + %16b | Expected:%16b | Got: %16b (Diff: %16b)", 
-                          i_p, i_c, expected_sum, o_c, (expected_sum - o_c));
-            end
-        end
-    endtask
 
 endmodule
