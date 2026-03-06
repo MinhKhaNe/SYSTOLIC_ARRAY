@@ -113,9 +113,9 @@ module processing_element_ws #(                         //Weight Sationary (Stor
                 .ADD_TYPE(ADD_TYPE),
                 .SIGNED(SIGNED)
             ) a0 (
-                .A(pipe_mac[STAGE]),
+                .A(MAC_IN),
                 .B(mul_value),
-                .Carry(0),
+                .Carry(1'b0),
                 .OUT(mac_out_adder)
             );
 
@@ -167,7 +167,7 @@ module processing_element_ws #(                         //Weight Sationary (Stor
             if(reg_clear) begin
                 mac_buffer  <= {WIDTH_MAC{1'b0}};
             end
-            else if(mac_is_valid) begin
+            else if(mac_is_valid && pipeline_in) begin
                 mac_buffer  <= ARITHMETIC ? mac_out_fma : mac_out_adder;    //Using ARITHMETIC value to choose value between fma and (mul with adder)    
             end
         end
