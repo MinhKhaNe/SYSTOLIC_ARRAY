@@ -2,16 +2,15 @@
 
 module tb_zero_detection;
 
-    localparam WIDTH_A = 16;
-    localparam WIDTH_B = 16;
-    localparam WIDTH_T = 2;
+    localparam     WIDTH_A = 16;
+    localparam     WIDTH_B = 16;
+    localparam     WIDTH_T = 2;
 
-    logic [WIDTH_A-1:0] A;
-    logic [WIDTH_B-1:0] B;
-    logic [WIDTH_T-1:0] Thres;
-    logic Zero;
+    logic     [WIDTH_A-1:0]     A;
+    logic     [WIDTH_B-1:0]     B;
+    logic     [WIDTH_T-1:0]     Thres;
+    logic                       Zero;
 
-    // DUT
     Zero_detection #(
         .WIDTH_A(WIDTH_A),
         .WIDTH_B(WIDTH_B),
@@ -23,7 +22,6 @@ module tb_zero_detection;
         .Zero(Zero)
     );
 
-    // ===== Helper task =====
     task show;
         $display("T=%0t | Thres=%0d | A=0x%h B=0x%h | Zero=%b",
                  $time, Thres, A, B, Zero);
