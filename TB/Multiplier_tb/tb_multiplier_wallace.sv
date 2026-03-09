@@ -1,9 +1,11 @@
 module tb_multiplier_wallace;
 
-    localparam APPROX = 0;
-    localparam WIDTH_A = 16;
-    localparam WIDTH_B = 16;
-    localparam WIDTH_MUL = WIDTH_A + WIDTH_B;
+    localparam  APPROX      = 0;
+    localparam  WIDTH_A     = 16;
+    localparam  WIDTH_B     = 16;
+    localparam  WIDTH_MUL   = WIDTH_A + WIDTH_B;
+    localparam  SIGNED      = 0;
+    localparam  STAGE       = 0;
     
     logic   [WIDTH_A-1:0]   A;
     logic   [WIDTH_B-1:0]   B;
@@ -13,10 +15,17 @@ module tb_multiplier_wallace;
     integer                 PASS, FAIL;
 
     Multiplier_wallace #(
-        .APPROX(APPROX)
+        .APPROX_TYPE(APPROX),
+        .APPROX_W(0),
+        .WIDTH_A(WIDTH_A),
+        .WIDTH_B(WIDTH_B),
+        .WIDTH_MUL(WIDTH_MUL),
+        .SIGNED(SIGNED),
+        .STAGE(STAGE)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
+        .pip_en(1),
         .A(A),
         .B(B),
         .OUT(OUT)
@@ -40,11 +49,11 @@ module tb_multiplier_wallace;
                 #1;
                 if(OUT !== GOLDEN) begin
                     $display("t=%0t FAILED!!! Expected result is %b, Acutal result is %b",$time, GOLDEN, OUT);
-                    PASS = PASS + 1;
+                    FAIL = FAIL + 1;
                 end
                 else begin
                     $display("t=%0t PASSED SUCCESSFULLY!!! Expected result is %b, Acutal result is %b",$time, GOLDEN, OUT);
-                    FAIL = FAIL + 1;
+                    PASS = PASS + 1;
                 end
             end
         end
