@@ -4,7 +4,7 @@ module tb_wallace_16bit;
     logic   [15:0]   A, B;
     logic   [31:0]   OUT, GOLDEN;
 
-    Wallace_8bit #(
+    Wallace_16bit #(
         .APPROX(APPROX)
     ) dut (
         .A(A),
