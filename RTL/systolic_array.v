@@ -44,8 +44,10 @@ module systolic_array #(
     wire    [WIDTH_B-1:0]       wei_in[0:y_axis][0:x_axis-1];    
     wire    [WIDTH_MAC-1:0]     mac_in[0:y_axis][0:x_axis];
     wire    [WIDTH_MAC-1:0]     mac_in_ws[0:y_axis][0:x_axis];
+    wire    [WIDTH_MAC-1:0]     mac_in_is[0:y_axis][0:x_axis];
     wire                        cell_en_in[0:y_axis][0:x_axis-1];
     wire                        cell_sc_en_in[0:y_axis][0:x_axis-1];
+     wire                       cell_en_in_is[0:y_axis-1][0:x_axis];
     wire                        c_switch_out_wire[0:y_axis-1][0:x_axis-1];
 
     assign  cell_out        =   cell_en_in[y_axis][x_axis-1];
@@ -54,18 +56,20 @@ module systolic_array #(
     genvar x;
     generate
         for(x = 0; x < x_axis; x = x + 1) begin
-            assign  wei_in[0][x]        = wei[x];
-            assign  cell_en_in[0][x]    = cell_en;
-            assign  cell_sc_en_in[0][x]    = cell_sc_en;
-            assign  mac_in_ws[0][x]   =   MAC_IN[x];
+            assign  wei_in[0][x]            =   wei[x];
+            assign  cell_en_in[0][x]        =   cell_en;
+            assign  cell_sc_en_in[0][x]     =   cell_sc_en;
+            assign  mac_in_ws[0][x]         =   MAC_IN[x];
         end
     endgenerate
 
     genvar y;
     generate
         for(y = 0; y < y_axis; y = y + 1) begin
-            assign  act_in[y][0]        =   act[y];
-            assign  mac_in[y][x_axis]   =   MAC_IN[y];
+            assign  act_in[y][0]            =   act[y];
+            assign  mac_in[y][x_axis]       =   MAC_IN[y];
+            assign  cell_en_in_is[y][0]     =   cell_sc_en;
+            assign  mac_in_is[y][0]         =   MAC_IN[y];
         end
     endgenerate
 
@@ -74,7 +78,7 @@ module systolic_array #(
         for(oy = 0; oy < y_axis; oy = oy + 1) begin
             for(ox = 0; ox < x_axis; ox = ox + 1) begin
                 assign  MAC_out[oy][ox] =   (PE_TYPE == 2)    ?   mac_in_ws[oy+1][ox]   :  
-                                            (PE_TYPE == 1)    ?   mac_in[oy][ox+1]   :
+                                            (PE_TYPE == 1)    ?   mac_in_is[oy][ox+1]   :
                                             mac_in[oy][ox];
             end
         end
@@ -149,19 +153,19 @@ module systolic_array #(
                         .rst_n(rst_n),
                         .act(act_in[i][j]),
                         .wei(wei_in[i][j]),
-                        .MAC_IN(mac_in[i][j+1]),
+                        .MAC_IN(mac_in_is[i][j]),
                         .pipeline_en(pipeline_en),
                         .reg_clear(reg_clear),
                         .cell_en(1'b1),
-                        .cell_sc_en((i == 0) ? cell_sc_en : cell_en_in[i][j]),
+                        .cell_sc_en((j == 0) ? cell_sc_en : cell_en_in_is[i][j]),
                         .c_switch(c_switch),
                         .cscan_en(cscan_en),
                         .Thres(Thres),
-                        .cell_out(cell_en_in[i+1][j]),
+                        .cell_out(cell_en_in_is[i][j+1]),
                         .c_switch_out(c_switch_out_wire[i][j]),
                         .wei_out(wei_in[i+1][j]),
                         .act_out(act_in[i][j+1]),
-                        .MAC_out(mac_in[i][j])
+                        .MAC_out(mac_in_is[i][j+1])         //MAC flow from left to right
                     );
                 end
             end
