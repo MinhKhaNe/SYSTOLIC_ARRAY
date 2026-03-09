@@ -22,7 +22,7 @@ module tb_multiplier_2x2;
         $dumpfile("tb_multiplier_2x2.vcd");
         $dumpvars(0, tb_multiplier_2x2);
 
-        $display(" A  B | GOLD | EXACT | APPROX");
+        $display("===== A  B | GOLD | EXACT | APPROX =====");
 
         for (int i = 0; i < 4; i++) begin
             for (int j = 0; j < 4; j++) begin
@@ -32,10 +32,10 @@ module tb_multiplier_2x2;
 
                 GOLD = i * j;
 
-                $display("%2d %2d |  %2d  |   %2d  |   %2d", i, j, GOLD, OUT_exact, OUT_approx);
+                $display("\n===== %8b %8b |  %b  |   %b  |   %b =====", i, j, GOLD, OUT_exact, OUT_approx);
 
                 if (OUT_exact !== GOLD) begin
-                  	$display("FAIL!!");
+                    $display("\n===== FAILED!! =====");
                     $stop;
                 end
             end
@@ -46,5 +46,6 @@ module tb_multiplier_2x2;
     end
 
 endmodule
+
 
 
