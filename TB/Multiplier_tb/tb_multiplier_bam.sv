@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module tb_multiplier_bam;
 
   localparam WIDTH_A   = 8;
@@ -33,13 +31,10 @@ module tb_multiplier_bam;
     .OUT   (OUT)
   );
 
-  // Clock
   always #5 clk = ~clk;
 
-  // Queue lưu golden
   integer golden_q [$];
 
-  // Task drive input
   task send;
     input signed [WIDTH_A-1:0] a;
     input signed [WIDTH_B-1:0] b;
@@ -52,17 +47,16 @@ module tb_multiplier_bam;
     end
   endtask
 
-  // Check output theo pipeline
   always @(posedge clk) begin
     if (rst_n && pip_en) begin
       if (golden_q.size() > LATENCY) begin
         integer golden;
         golden = golden_q.pop_front();
 
-        $display("A*B expected=%0d | OUT=%0d %s", golden, OUT, (OUT === golden) ? "OK" : "FAIL");
+        $display("\n===== Expected value=%0d | Actual value=%0d \n%s =====", golden, OUT, (OUT === golden) ? "PASSED!!!" : "FAILED!!!");
 
         if (OUT !== golden) begin
-          $error("FAILED!!!!");
+          $error("===== FAILED!!! =====");
         end
       end
     end
