@@ -36,8 +36,8 @@ module processing_element_is #(                         //Input Sationary (Store
     output  wire                    cell_out,           //Cell_enable output for next PE
     output  wire                    c_switch_out,
     
-    output  wire    [WIDTH_A-1:0]   wei_out,            //weight out
-    output  wire    [WIDTH_B-1:0]   act_out,            //do not flow out
+    output  wire    [WIDTH_B-1:0]   wei_out,            //weight out
+    output  wire    [WIDTH_A-1:0]   act_out,            //do not flow out
     output  wire    [WIDTH_MAC-1:0] MAC_out             //MAC out
 );
 
@@ -119,7 +119,7 @@ module processing_element_is #(                         //Input Sationary (Store
                 .ADD_TYPE(ADD_TYPE),
                 .SIGNED(SIGNED)
             ) a0 (
-                .A(pipe_mac[STAGE]),
+                .A(MAC_IN),
                 .B(mul_value),
                 .Carry(1'b0),
                 .OUT(mac_out_adder)
