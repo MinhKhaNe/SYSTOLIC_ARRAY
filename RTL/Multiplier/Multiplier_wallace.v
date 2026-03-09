@@ -64,21 +64,22 @@ module Multiplier_wallace #(
 		end
 	end
 
-	//Stimulate pipeline stage
-	always @(posedge clk or negedge rst_n) begin
-		if (!rst_n) begin
-       		for(p = 0; p <= STAGE; p = p + 1) begin
-				pipe_reg[p]		<= {WIDTH_MUL{1'b0}};
-			end
-		end
-		else if (pip_en) begin
-    		pipe_reg[0] <= product_out;
-    		for (p = 1; p <= STAGE; p = p + 1) begin
-        		pipe_reg[p] <= pipe_reg[p-1];
-			end
-		end
-	end
+	// //Stimulate pipeline stage
+	// always @(posedge clk or negedge rst_n) begin
+	// 	if (!rst_n) begin
+ //       		for(p = 0; p <= STAGE; p = p + 1) begin
+	// 			pipe_reg[p]		<= {WIDTH_MUL{1'b0}};
+	// 		end
+	// 	end
+	// 	else if (pip_en) begin
+ //    		pipe_reg[0] <= product_out;
+ //    		for (p = 1; p <= STAGE; p = p + 1) begin
+ //        		pipe_reg[p] <= pipe_reg[p-1];
+	// 		end
+	// 	end
+	// end
 
-	assign OUT = pipe_reg[STAGE];
+	// assign OUT = pipe_reg[STAGE];
+	assign OUT = product;
 
 endmodule
