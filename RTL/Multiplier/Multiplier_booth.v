@@ -58,8 +58,8 @@ module Multiplier_booth #(
 					3'b010: product	<= product + (A_ext << (2*i));		//product = product + 1 * A
 					3'b011: product	<= product + (A_ext << (2*i+1));	//product = product + 2 * A
 					3'b100: product	<= product - (A_ext << (2*i+1));	//product = product - 2 * A
-					3'b101: product	<= product - (A_ext << (2*i));		//product = product - 2 * A
-					3'b110: product	<= product - (A_ext << (2*i));		//product = product - 2 * A
+					3'b101: product	<= product - (A_ext << (2*i));		//product = product - 1 * A
+					3'b110: product	<= product - (A_ext << (2*i));		//product = product - 1 * A
 					3'b111: product	<= product;							//Keep product
 				endcase
 				i <= i + 1'b1;		//Increase i to continue loop
@@ -98,4 +98,5 @@ module Multiplier_booth #(
 
 	assign OUT = pipe_reg[STAGE];						//OUT result when finish all pipeline stages
 endmodule
+
 
