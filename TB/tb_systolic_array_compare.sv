@@ -34,8 +34,8 @@ module tb_systolic_array_compare;
     logic   [WIDTH_T-1:0]   Thres;
 
     // Outputs
-    logic                                  cell_out;
-    logic                                  c_switch_out;
+    logic                                  cell_out, cell_out_ideal;
+    logic                                  c_switch_out, c_switch_out_ideal;
     logic               [WIDTH_MAC-1:0]    MAC_out_ideal[0:Y_AXIS-1][0:X_AXIS-1];
     logic               [WIDTH_MAC-1:0]    MAC_out[0:Y_AXIS-1][0:X_AXIS-1];
     real                                   err[0:Y_AXIS-1][0:X_AXIS-1];
@@ -78,8 +78,8 @@ module tb_systolic_array_compare;
         .c_switch(c_switch),     
         .cscan_en(cscan_en),      
         .Thres(Thres),            
-        .cell_out(cell_out),      
-        .c_switch_out(c_switch_out), 
+        .cell_out(cell_out_ideal),      
+        .c_switch_out(c_switch_out_ideal), 
         .MAC_out(MAC_out_ideal)
     );
 
@@ -125,7 +125,7 @@ systolic_array #(
         for(int i=0;i<Y_AXIS;i++) begin
             for(int j=0;j<X_AXIS;j++) begin
                 if(MAC_out_ideal[i][j] != 0)
-                    err[i][j] = (MAC_out_ideal[i][j] - MAC_out[i][j]) * 1.0 / MAC_out_ideal[i][j];
+                    err[i][j] = ((MAC_out_ideal[i][j] - MAC_out[i][j]) * 1.0 )/ MAC_out_ideal[i][j];
                 else
                     err[i][j] = 0.0;
            end
