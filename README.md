@@ -85,7 +85,7 @@ RTL code of Systolic Array in SAURIA Core and testbench to test each module
   </a>
 </p>
 
-- An Output-Stationary Processing Element designed for MAC operations.
+- A Weight-Stationary Processing Element designed for MAC operations.
 - Each PE contains a local weight register that keeps the weight stationary during computation.
 - Weights remain inside the PE, while input activations stream through the array.
 - Incoming activations are multiplied with the locally stored weight.
