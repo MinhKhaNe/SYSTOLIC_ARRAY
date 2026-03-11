@@ -11,7 +11,7 @@ module tb_systolic_array_compare;
     localparam  AA_APPROX                   = 1;
     localparam  A_APPROX                    = 1;
     localparam  MUL_TYPE                    = 1;    //0. Ideal, 1.Bam, 2.3.4. Booth, 5.6. Log, 7.8.9 Wallace
-    localparam  ADD_TYPE                    = 0;    //0. Ideal, 1. Gear, 2. Gear_2c, 3. Loa, 4. Trua, 5. Truah
+    localparam  ADD_TYPE                    = 4;    //0. Ideal, 1. Gear, 2. Gear_2c, 3. Loa, 4. Trua, 5. Truah
     localparam  STAGE                       = 0;
     localparam  ARITHMETIC                  = 0;
     localparam  SIGNED                      = 1;
@@ -39,6 +39,7 @@ module tb_systolic_array_compare;
     logic               [WIDTH_MAC-1:0]    MAC_out_ideal[0:Y_AXIS-1][0:X_AXIS-1];
     logic               [WIDTH_MAC-1:0]    MAC_out[0:Y_AXIS-1][0:X_AXIS-1];
     real                                   err[0:Y_AXIS-1][0:X_AXIS-1];
+    real                                   mac_out_max, mac_out_min;
 
     initial begin
         clk = 0;
@@ -124,13 +125,45 @@ systolic_array #(
     always @(posedge clk) begin
         for(int i=0;i<Y_AXIS;i++) begin
             for(int j=0;j<X_AXIS;j++) begin
-                if(MAC_out_ideal[i][j] != 0)
-                    err[i][j] = ((MAC_out_ideal[i][j] - MAC_out[i][j]) * 1.0 )/ MAC_out_ideal[i][j];
-                else
+                if(MAC_out_ideal[i][j] != 0) begin
+                    if($signed(MAC_out_ideal[i][j]) > $signed(MAC_out[i][j])) begin
+                        err[i][j] = (($signed(MAC_out_ideal[i][j]) - $signed(MAC_out[i][j])) * 1.0 )/ $signed(MAC_out_ideal[i][j]);
+                    end
+                    else begin
+                        err[i][j] = (($signed(MAC_out[i][j]) - $signed(MAC_out_ideal[i][j])) * 1.0 )/ $signed(MAC_out_ideal[i][j]);
+                    end
+
+                    if(mac_out_max < err[i][j]) begin
+                        mac_out_max = err[i][j];
+                    end
+                    if(mac_out_min > err[i][j]) begin
+                        mac_out_min = err[i][j];
+                    end
+                end
+                else begin
                     err[i][j] = 0.0;
+                end
            end
         end
     end
+
+    // logic [WIDTH_MAC-1:0] MAC_out_ideal_reg [Y_AXIS-1][X_AXIS-1];
+
+    // always @(posedge clk) begin
+    //     for(int i=0; i<Y_AXIS; i++) begin
+    //         for(int j=0; j<X_AXIS; j++) begin
+            
+    //             MAC_out_ideal_reg[i][j] <= MAC_out_ideal[i][j];
+
+    //             if(MAC_out_ideal_reg[i][j] != 0) begin
+    //                 err[i][j] = (((MAC_out_ideal_reg[i][j]) - MAC_out[i][j]) * 1.0) / (MAC_out_ideal_reg[i][j]);
+    //             end 
+    //             else begin
+    //                 err[i][j] = 0.0;
+    //             end
+    //         end
+    //     end
+    // end
 
     //Array 1:  [1, 2][3, 4]
     //Array 2:  [5, 6][7, 8]
@@ -146,7 +179,7 @@ systolic_array #(
         // $monitor("\nValue of 1st PE is: %d, \nValue of 2nd PE is %d, \nValue of 3rd PE is %d, \nValue of 4th PE is %d, \nValue of 5th PE is: %d, \nValue of 6th PE is %d, \nValue of 7th PE is %d, \nValue of 8th PE is %d, \nValue of 9th PE is %d", 
         //         MAC_out[0][0], MAC_out[0][1], MAC_out[0][2], MAC_out[1][0], MAC_out[1][1], MAC_out[1][2], MAC_out[2][0], MAC_out[2][1], MAC_out[2][2]);
 
-        $monitor("\n [%.3f] [%.3f] [%.3f] \n [%.3f] [%.3f] [%.3f] \n [%.3f] [%.3f] [%.3f]",
+        $monitor("\n===== t=%0t\n [%.3f] [%.3f] [%.3f] \n [%.3f] [%.3f] [%.3f] \n [%.3f] [%.3f] [%.3f] =====", $time,
                  err[0][0], err[0][1], err[0][2],
                  err[1][0], err[1][1], err[1][2],
                  err[2][0], err[2][1], err[2][2]);
@@ -201,6 +234,33 @@ systolic_array #(
         foreach(wei[i]) wei[i]=0;
 
         repeat(20) @(posedge clk);
+
+        // $display("===== SIGNED NUMBER =====");
+        // reg_clear = 1;
+
+        // @(posedge clk);
+        // reg_clear = 0;
+
+        // @(posedge clk); #1;
+        // act[0] = -16'sd2; act[1] = 16'sd0; act[2] = 16'sd0;
+        // wei[0] = 16'sd3; wei[1] = 16'sd0; wei[2] = 16'sd0;
+
+        // @(posedge clk); #1;
+        // act[0] = 16'sd6; act[1] = -16'sd4; act[2] = 16'sd0;
+        // wei[0] = -16'sd7; wei[1] = 16'sd5; wei[2] = 16'sd0;
+
+        // @(posedge clk); #1;
+        // act[0] = 16'sd0; act[1] = -16'sd8; act[2] = 16'sd0;
+        // wei[0] = 16'sd0; wei[1] = 16'sd9; wei[2] = 16'sd0;
+
+        // //Reset Data IN
+        // @(posedge clk);
+        // foreach(act[i]) act[i]=0;
+        // foreach(wei[i]) wei[i]=0;
+
+        // repeat(20) @(posedge clk);
+
+        $display("===== UNSIGNED NUMBER =====");
 
         @(posedge clk);
         reg_clear = 1;
@@ -264,6 +324,7 @@ systolic_array #(
         foreach(wei[i]) wei[i]=0;
 
         repeat(10) @(posedge clk);
+        $display("\n===== Max Error is: %.3f, Min Error is: %.3f =====",mac_out_max, mac_out_min);
 
         $finish;
 
