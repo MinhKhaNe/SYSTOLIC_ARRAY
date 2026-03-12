@@ -80,6 +80,6 @@ module Multiplier_wallace #(
 	// end
 
 	// assign OUT = pipe_reg[STAGE];
-	assign OUT = product;
+	assign OUT = product_out;
 
 endmodule
