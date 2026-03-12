@@ -10,8 +10,8 @@ module tb_systolic_array_compare;
     localparam  M_APPROX                    = 1;
     localparam  AA_APPROX                   = 1;
     localparam  A_APPROX                    = 1;
-    localparam  MUL_TYPE                    = 1;    //0. Ideal, 1.Bam, 2.3.4. Booth, 5.6. Log, 7.8.9 Wallace
-    localparam  ADD_TYPE                    = 4;    //0. Ideal, 1. Gear, 2. Gear_2c, 3. Loa, 4. Trua, 5. Truah
+    localparam  MUL_TYPE                    = 7;    //0. Ideal, 1.Bam, 2.3.4. Booth, 5.6. Log, 7.8.9 Wallace
+    localparam  ADD_TYPE                    = 5;    //0. Ideal, 1. Gear, 2. Gear_2c, 3. Loa, 4. Trua, 5. Truah
     localparam  STAGE                       = 0;
     localparam  ARITHMETIC                  = 0;
     localparam  SIGNED                      = 1;
@@ -122,28 +122,32 @@ systolic_array #(
         .MAC_out(MAC_out)
     );
     
-    always @(posedge clk) begin
-        for(int i=0;i<Y_AXIS;i++) begin
-            for(int j=0;j<X_AXIS;j++) begin
-                if(MAC_out_ideal[i][j] != 0) begin
-                    if($signed(MAC_out_ideal[i][j]) > $signed(MAC_out[i][j])) begin
-                        err[i][j] = (($signed(MAC_out_ideal[i][j]) - $signed(MAC_out[i][j])) * 1.0 )/ $signed(MAC_out_ideal[i][j]);
-                    end
-                    else begin
-                        err[i][j] = (($signed(MAC_out[i][j]) - $signed(MAC_out_ideal[i][j])) * 1.0 )/ $signed(MAC_out_ideal[i][j]);
-                    end
+    function automatic real abs_real(real val);
+        return (val < 0) ? -val : val;
+    endfunction
 
-                    if(mac_out_max < err[i][j]) begin
-                        mac_out_max = err[i][j];
-                    end
-                    if(mac_out_min > err[i][j]) begin
-                        mac_out_min = err[i][j];
-                    end
-                end
+    always @(posedge clk) begin
+        real ideal_val, actual_val, diff, current_err;
+    
+        for(int i=0; i<Y_AXIS; i++) begin
+            for(int j=0; j<X_AXIS; j++) begin
+            
+                ideal_val  = $itor($signed(MAC_out_ideal[i][j]));
+                actual_val = $itor($signed(MAC_out[i][j]));
+
+                if (ideal_val != 0.0) begin
+                    diff = abs_real(ideal_val - actual_val);
+                    current_err = diff / abs_real(ideal_val);
+                
+                    err[i][j] = current_err;
+
+                    if (current_err > mac_out_max) mac_out_max = current_err;
+                    if (current_err < mac_out_min) mac_out_min = current_err;
+                end 
                 else begin
                     err[i][j] = 0.0;
                 end
-           end
+            end
         end
     end
 
@@ -190,68 +194,43 @@ systolic_array #(
         
         rst_n = 1; cell_sc_en = 1; pipeline_en = 1; reg_clear = 0; cell_en = 1; cell_sc_en = 1; c_switch = 1; cscan_en = 0; Thres = 0;
         
-        @(posedge clk); #1;
-        act[0] = 16'd1; act[1] = 16'd0; 
-        wei[0] = 16'd5; wei[1] = 16'd0;
+        // @(posedge clk); #1;
+        // act[0] = 16'd1; act[1] = 16'd0; 
+        // wei[0] = 16'd5; wei[1] = 16'd0;
 
-        @(posedge clk); #1;
-        act[0] = 16'd3; act[1] = 16'd2; 
-        wei[0] = 16'd6; wei[1] = 16'd7;
+        // @(posedge clk); #1;
+        // act[0] = 16'd3; act[1] = 16'd2; 
+        // wei[0] = 16'd6; wei[1] = 16'd7;
 
-        @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd4; 
-        wei[0] = 16'd0; wei[1] = 16'd8;
+        // @(posedge clk); #1;
+        // act[0] = 16'd0; act[1] = 16'd4; 
+        // wei[0] = 16'd0; wei[1] = 16'd8;
 
-        //Reset Data IN
-        @(posedge clk);
-        foreach(act[i]) act[i]=0;
-        foreach(wei[i]) wei[i]=0;
+        // //Reset Data IN
+        // @(posedge clk);
+        // foreach(act[i]) act[i]=0;
+        // foreach(wei[i]) wei[i]=0;
 
-        repeat(20) @(posedge clk);
+        // repeat(20) @(posedge clk);
         
-        reg_clear = 1;
-
-        @(posedge clk);
-        reg_clear = 0;
-
-        //[6 2]     [7 9]
-        //[8 4]     [3 5]
-        @(posedge clk); #1;
-        act[0] = 16'd2; act[1] = 16'd0; act[2] = 16'd0;
-        wei[0] = 16'd3; wei[1] = 16'd0; wei[2] = 16'd0;
-
-        @(posedge clk); #1;
-        act[0] = 16'd6; act[1] = 16'd4; act[2] = 16'd0;
-        wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd0;
-
-        @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd8; act[2] = 16'd0;
-        wei[0] = 16'd0; wei[1] = 16'd9; wei[2] = 16'd0;
-
-        //Reset Data IN
-        @(posedge clk);
-        foreach(act[i]) act[i]=0;
-        foreach(wei[i]) wei[i]=0;
-
-        repeat(20) @(posedge clk);
-
-        // $display("===== SIGNED NUMBER =====");
         // reg_clear = 1;
 
         // @(posedge clk);
         // reg_clear = 0;
 
+        // //[6 2]     [7 9]
+        // //[8 4]     [3 5]
         // @(posedge clk); #1;
-        // act[0] = -16'sd2; act[1] = 16'sd0; act[2] = 16'sd0;
-        // wei[0] = 16'sd3; wei[1] = 16'sd0; wei[2] = 16'sd0;
+        // act[0] = 16'd2; act[1] = 16'd0; act[2] = 16'd0;
+        // wei[0] = 16'd3; wei[1] = 16'd0; wei[2] = 16'd0;
 
         // @(posedge clk); #1;
-        // act[0] = 16'sd6; act[1] = -16'sd4; act[2] = 16'sd0;
-        // wei[0] = -16'sd7; wei[1] = 16'sd5; wei[2] = 16'sd0;
+        // act[0] = 16'd6; act[1] = 16'd4; act[2] = 16'd0;
+        // wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd0;
 
         // @(posedge clk); #1;
-        // act[0] = 16'sd0; act[1] = -16'sd8; act[2] = 16'sd0;
-        // wei[0] = 16'sd0; wei[1] = 16'sd9; wei[2] = 16'sd0;
+        // act[0] = 16'd0; act[1] = 16'd8; act[2] = 16'd0;
+        // wei[0] = 16'd0; wei[1] = 16'd9; wei[2] = 16'd0;
 
         // //Reset Data IN
         // @(posedge clk);
@@ -260,27 +239,37 @@ systolic_array #(
 
         // repeat(20) @(posedge clk);
 
-        $display("===== UNSIGNED NUMBER =====");
-
-        @(posedge clk);
+        $display("===== SIGNED NUMBER =====");
         reg_clear = 1;
 
         @(posedge clk);
         reg_clear = 0;
 
-        //[2 4]     [3 5]
-        //[6 8]     [7 9]
         @(posedge clk); #1;
-        act[0] = 16'd4; act[1] = 16'd0; act[2] = 16'd0;
-        wei[0] = 16'd7; wei[1] = 16'd0; wei[2] = 16'd0;
+        act[0] = -16'sd2; act[1] = 16'sd0; act[2] = 16'sd0;
+        wei[0] = 16'sd3; wei[1] = 16'sd0; wei[2] = 16'sd0;
+        repeat(7) @(posedge clk);
+
 
         @(posedge clk); #1;
-        act[0] = 16'd2; act[1] = 16'd8; act[2] = 16'd0;
-        wei[0] = 16'd3; wei[1] = 16'd9; wei[2] = 16'd0;
+        act[0] = 16'sd6; act[1] = -16'sd4; act[2] = 16'sd0;
+        wei[0] = -16'sd7; wei[1] = 16'sd5; wei[2] = 16'sd0;
+        repeat(7) @(posedge clk);
 
         @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd0;
-        wei[0] = 16'd0; wei[1] = 16'd5; wei[2] = 16'd0;
+        act[0] = -16'sd5; act[1] = -16'sd8; act[2] = -16'sd22;
+        wei[0] = 16'sd2; wei[1] = 16'sd9; wei[2] = -16'sd3;
+        repeat(7) @(posedge clk);
+
+        @(posedge clk); #1;
+        act[0] = 16'sd0; act[1] = -16'sd4; act[2] = 16'sd2;
+        wei[0] = 16'sd0; wei[1] = 16'sd5; wei[2] = 16'sd7;
+        repeat(7) @(posedge clk);
+
+        @(posedge clk); #1;
+        act[0] = 16'sd0; act[1] = 16'sd0; act[2] = 16'sd8;
+        wei[0] = 16'sd0; wei[1] = 16'sd0; wei[2] = -16'sd5;
+        repeat(7) @(posedge clk);
 
         //Reset Data IN
         @(posedge clk);
@@ -289,39 +278,68 @@ systolic_array #(
 
         repeat(20) @(posedge clk);
 
-        @(posedge clk);
-        reg_clear = 1;
+        // $display("===== UNSIGNED NUMBER =====");
 
-        @(posedge clk);
-        reg_clear = 0;
+        // @(posedge clk);
+        // reg_clear = 1;
+
+        // @(posedge clk);
+        // reg_clear = 0;
+
+        // //[2 4]     [3 5]
+        // //[6 8]     [7 9]
+        // @(posedge clk); #1;
+        // act[0] = 16'd4; act[1] = 16'd0; act[2] = 16'd0;
+        // wei[0] = 16'd7; wei[1] = 16'd0; wei[2] = 16'd0;
+
+        // @(posedge clk); #1;
+        // act[0] = 16'd2; act[1] = 16'd8; act[2] = 16'd0;
+        // wei[0] = 16'd3; wei[1] = 16'd9; wei[2] = 16'd0;
+
+        // @(posedge clk); #1;
+        // act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd0;
+        // wei[0] = 16'd0; wei[1] = 16'd5; wei[2] = 16'd0;
+
+        // //Reset Data IN
+        // @(posedge clk);
+        // foreach(act[i]) act[i]=0;
+        // foreach(wei[i]) wei[i]=0;
+
+        // repeat(20) @(posedge clk);
+
+        // @(posedge clk);
+        // reg_clear = 1;
+
+        // @(posedge clk);
+        // reg_clear = 0;
         
         //[3 2 1]     [7 4 1]
         //[6 5 4]     [8 5 2] 
         //[9 8 7]     [9 6 3]
-        @(posedge clk); #1;
-        act[0] = 16'd1; act[1] = 16'd0; act[2] = 16'd0;
-        wei[0] = 16'd9; wei[1] = 16'd0; wei[2] = 16'd0;
+        // @(posedge clk); #1;
+        // act[0] = 16'd1; act[1] = 16'd0; act[2] = 16'd0;
+        // wei[0] = 16'd9; wei[1] = 16'd0; wei[2] = 16'd0;
 
-        @(posedge clk); #1;
-        act[0] = 16'd2; act[1] = 16'd4; act[2] = 16'd0;
-        wei[0] = 16'd8; wei[1] = 16'd6; wei[2] = 16'd0;
+        // @(posedge clk); #1;
+        // act[0] = 16'd2; act[1] = 16'd4; act[2] = 16'd0;
+        // wei[0] = 16'd8; wei[1] = 16'd6; wei[2] = 16'd0;
 
-        @(posedge clk); #1;
-        act[0] = 16'd3; act[1] = 16'd5; act[2] = 16'd7;
-        wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd3;
+        // @(posedge clk); #1;
+        // act[0] = 16'd3; act[1] = 16'd5; act[2] = 16'd7;
+        // wei[0] = 16'd7; wei[1] = 16'd5; wei[2] = 16'd3;
 
-        @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd8;
-        wei[0] = 16'd0; wei[1] = 16'd4; wei[2] = 16'd2;
+        // @(posedge clk); #1;
+        // act[0] = 16'd0; act[1] = 16'd6; act[2] = 16'd8;
+        // wei[0] = 16'd0; wei[1] = 16'd4; wei[2] = 16'd2;
 
-        @(posedge clk); #1;
-        act[0] = 16'd0; act[1] = 16'd0; act[2] = 16'd9;
-        wei[0] = 16'd0; wei[1] = 16'd0; wei[2] = 16'd1;
+        // @(posedge clk); #1;
+        // act[0] = 16'd0; act[1] = 16'd0; act[2] = 16'd9;
+        // wei[0] = 16'd0; wei[1] = 16'd0; wei[2] = 16'd1;
 
-        //Reset Data IN
-        @(posedge clk);
-        foreach(act[i]) act[i]=0;
-        foreach(wei[i]) wei[i]=0;
+        // //Reset Data IN
+        // @(posedge clk);
+        // foreach(act[i]) act[i]=0;
+        // foreach(wei[i]) wei[i]=0;
 
         repeat(10) @(posedge clk);
         $display("\n===== Max Error is: %.3f, Min Error is: %.3f =====",mac_out_max, mac_out_min);
