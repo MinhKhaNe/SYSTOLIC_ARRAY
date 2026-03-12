@@ -34,7 +34,7 @@ module Adder_gear_2c #(
 
     genvar i;
     generate
-        for(i=0; i<k; i=i+1) begin : 
+        for(i=0; i<k; i=i+1) begin 
 			//Create Sub-Adder by slit inputs
             assign subadd_A[i] = a[i*R +: L];
             assign subadd_B[i] = b[i*R +: L];
@@ -64,4 +64,5 @@ module Adder_gear_2c #(
     assign OUT = final_sum[BITS-1:0];
 
 endmodule
+
 
