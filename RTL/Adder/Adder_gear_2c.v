@@ -27,36 +27,47 @@ module Adder_gear_2c #(
     wire    [k-1:0]         subadd_one;     
     wire    [k-1:0]         carry;
     wire    [N-1:0]         final_sum;
+    wire    [L-1:0]         corrected [k-1:0];
     
 	//Sign Extend
     assign  a = (WIDTH_A < BITS) ? {{(BITS-WIDTH_A){A[WIDTH_A-1]}}, A} : A;
     assign  b = (WIDTH_B < BITS) ? {{(BITS-WIDTH_B){B[WIDTH_B-1]}}, B} : B;
 
-    genvar i;
+    genvar i, j;
     generate
-        for(i=0; i<k; i=i+1) begin 
-			//Create Sub-Adder by slit inputs
+        for (i = 0; i < k; i = i + 1) begin
+
+            //Create Sub-Adder by slit inputs
             assign subadd_A[i] = a[i*R +: L];
             assign subadd_B[i] = b[i*R +: L];
 
-			//Sum the sub-adder
+            //Sum the sub-adder
             assign subadd_sum[i] = subadd_A[i] + subadd_B[i];
-            
-			//If all bits are 1 do carry propagation
-            assign subadd_one[i] = &subadd_sum[i][L-1:P];
 
-            if(i == 0) begin
-				//First carry is the highest bit of first sub-adder
+            if (i == 0) begin 
+                //First carry is the highest bit of first sub-adder
                 assign carry[0] = subadd_sum[0][L];
-				//Take the first L bit from the sum of sub-adders A and B
+                //Take the first L bit from the sum of sub-adders A and B
                 assign final_sum[L-1:0] = subadd_sum[0][L-1:0];
-            end
-            else begin
-				//Predict carry from data of previous stage
+				//First sub do not need carry
+                assign subadd_one[0] = 1'b0; 
+            end  
+            else begin 
+                // Calulate for 1st stage
+                assign subadd_one[i] = &subadd_sum[i][L-1:0];
+                 //Predict carry from data of previous stage
                 assign carry[i] = subadd_sum[i][L] | (carry[i-1] & subadd_one[i]);
-                
-				//Calculate result
-                assign final_sum[P + i*R +: R] = subadd_sum[i][L-1:P] + (carry[i-1] & (&subadd_sum[i][P-1:0]));
+
+                //For loop to write bit to sum 
+                for (j = 0; j < R; j = j + 1) begin 
+                    assign corrected[i][P+j] =  (subadd_sum[i][P+j] & (!subadd_one[i])) | ((!carry[i-1]) & subadd_one[i]);
+                end
+
+                //Discard overlap
+                assign corrected[i][P-1:0] = 0;
+
+                //Calculate result
+                assign final_sum[P + i*R +: R] = corrected[i][L-1:P];
             end
         end
     endgenerate
